@@ -573,6 +573,26 @@
         <h1>📋 Трекер Подій (Vampire)</h1>
         
         <div class="form-section">
+            <h3>Звітний період</h3>
+            <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <label>Початок:</label>
+                    <select id="startTime" style="padding: 8px; font-size: 14px;">
+                        <option value="16:00">16:00</option>
+                        <option value="4:00">4:00</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Кінець:</label>
+                    <select id="endTime" style="padding: 8px; font-size: 14px;">
+                        <option value="16:00">16:00</option>
+                        <option value="4:00" selected>4:00</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section">
             <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Інформація про екіпаж</h2>
             
             <div class="form-group">
@@ -845,7 +865,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.1</div>
+        <div>Ver: 0.0.1</div>
     </div>
 
     <script>
@@ -1430,6 +1450,9 @@
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
             
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            
             const flightsText = declineFlights(flightCount);
             const coordsText = positionCoords ? ` (${positionCoords})` : '';
             
@@ -1787,7 +1810,7 @@
             
             paragraphs.push(new Paragraph({
                 children: [new TextRun({ 
-                    text: `Протягом звітного періоду з 17:00 ${yesterdayStr}р. по 17:00 ${dateStr}р. було здійснено наступне:`, 
+                    text: `Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:`, 
                     font: "Times New Roman", 
                     size: 24
                 })],
@@ -1940,8 +1963,11 @@
             });
             
             const blob = await docxLib.Packer.toBlob(doc);
+            const fileDate = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
             const positionFileName = positionName.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
-            saveAs(blob, `vampire_${positionFileName}_${dateStr.replace(/\./g, '-')}.docx`);
+            const timeStart = startTime.replace(':', '-');
+            const timeEnd = endTime.replace(':', '-');
+            saveAs(blob, `vampire_${positionFileName}_${timeStart}_${timeEnd}_${fileDate}.docx`);
             console.log('DOCX file generated successfully');
             
             } catch (error) {
@@ -1965,6 +1991,9 @@
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             const yesterdayStr = yesterday.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
+            
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
             
             const eventCounts = {};
             let infantryEventCount = 0; // Кількість подій "Ураження" з піхотою
@@ -2024,7 +2053,7 @@
             
 <p><b>ПІДСУМКОВЕ ДОНЕСЕННЯ №_____ 1 ББпC 1 ОШП Рота: Вампіри</b></p>
 
-<p>1. Час виконання завдання: 17:00 ${yesterdayStr} по 17:00 ${dateStr}.</p>
+<p>1. Час виконання завдання: ${startTime} ${yesterdayStr} по ${endTime} ${dateStr}.</p>
 
 <p>2. Напрямок виконання завдання:</p>
 
@@ -2101,11 +2130,12 @@
                 
                 if (parts.length === 0) return name;
                 
-                parts[0] = parts[0].toLowerCase();
+                // Capitalized all words
                 
-                for (let i = 1; i < parts.length; i++) {
+                for (let i = 0; i < parts.length; i++) {
                     parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].slice(1).toLowerCase();
                 }
+                
                 
                 return parts.join(' ');
             };
@@ -2116,7 +2146,7 @@
             if (engineer) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;інженер БК – ${formatCrewName(engineer)}</p>\n`;
             
             html += `<p>&nbsp;</p>\n`;
-            html += `<p>Протягом звітного періоду з 17:00 ${yesterdayStr}р. по 17:00 ${dateStr}р. було здійснено наступне:</p>\n`;
+            html += `<p>Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:</p>\n`;
             
             const eventsByType = {};
             events.forEach(event => {
@@ -2227,6 +2257,7 @@
             html += `<p>&nbsp;</p>\n`;
             html += `<p>&nbsp;</p>\n`;
             
+            html += `<p>========================</p>\n`;
             html += `<p style="font-size: 14pt;"><b>Для comedy club r.i.p</b></p>\n`;
             html += `<p>&nbsp;</p>\n`;
             
@@ -2296,10 +2327,15 @@
             
             html += `</body></html>`;
             
+            const fileDate = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
+            const positionFileName = positionName.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
+            const timeStart = startTime.replace(':', '-');
+            const timeEnd = endTime.replace(':', '-');
+            
             const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `vampire_${positionName}_${dateStr.replace(/\./g, '')}.doc`;
+            link.download = `vampire_${positionFileName}_${timeStart}_${timeEnd}_${fileDate}.doc`;
             link.click();
         }
         
