@@ -865,7 +865,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.0.1</div>
+        <div>Ver: 0.0.2</div>
     </div>
 
     <script>
@@ -1336,26 +1336,26 @@
                     <div class="event-card">
                         <button class="delete-event-btn" onclick="deleteEvent(${index})">✕</button>
                         <h3>Подія #${index + 1}</h3>
-                        <div class="event-field"><strong>type:</strong> ${event.type || '—'}</div>`;
+                        <div class="event-field"><strong>Подія:</strong> ${event.type || '—'}</div>`;
                 
                 if (event.locations) {
                     event.locations.forEach((loc, i) => {
-                        html += `<div class="event-field"><strong>квадрат ${i+1}:</strong> ${loc.landmark || '—'}</div>`;
-                        html += `<div class="event-field"><strong>координати ${i+1}:</strong> ${loc.coords || '—'}</div>`;
+                        html += `<div class="event-field"><strong>Орієнтир ${i+1}:</strong> ${loc.landmark || '—'}</div>`;
+                        html += `<div class="event-field"><strong>Координати ${i+1}:</strong> ${loc.coords || '—'}</div>`;
                     });
                 } else {
-                    html += `<div class="event-field"><strong>landmark:</strong> ${event.landmark || '—'}</div>`;
-                    html += `<div class="event-field"><strong>coords:</strong> ${event.coords || '—'}</div>`;
+                    html += `<div class="event-field"><strong>Орієнтир:</strong> ${event.landmark || '—'}</div>`;
+                    html += `<div class="event-field"><strong>Координати:</strong> ${event.coords || '—'}</div>`;
                 }
                 
-                html += `<div class="event-field"><strong>sky:</strong> ${event.sky || '—'}</div>
-                        <div class="event-field"><strong>drop:</strong> ${event.drop || '—'}</div>
-                        <div class="event-field"><strong>ground:</strong> ${event.ground || '—'}</div>
-                        <div class="event-field"><strong>ammo:</strong> ${formatBK(event.ammo)}</div>`;
+                html += `<div class="event-field"><strong>Небо:</strong> ${event.sky || '—'}</div>
+                        <div class="event-field"><strong>Скид:</strong> ${event.drop || '—'}</div>
+                        <div class="event-field"><strong>Земля:</strong> ${event.ground || '—'}</div>
+                        <div class="event-field"><strong>БК:</strong> ${formatBK(event.ammo)}</div>`;
                 
                 if (event.targets && event.targets.length > 0) {
-                    const targetsStr = event.targets.map(t => `${t.type}: ${t.статус} - ${t.кількість} ${t.суфікс}`).join(', ');
-                    html += `<div class="event-field"><strong>targets:</strong> ${targetsStr}</div>`;
+                    const targetsStr = event.targets.map(t => `${t.type}: ${t.status} - ${t.count} ${t.suffix}`).join(', ');
+                    html += `<div class="event-field"><strong>Цілі:</strong> ${targetsStr}</div>`;
                 }
                 
                 const checkboxes = [];
