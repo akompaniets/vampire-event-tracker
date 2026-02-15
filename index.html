@@ -782,6 +782,9 @@
                             <option value="РН90">РН90</option>
                             <option value="BAvB-3,5 (МТД)">BAvB-3,5 (МТД)</option>
                             <option value="СВП">СВП</option>
+                            <option value="ЗБ-2500">ЗБ-2500</option>
+                            <option value="ЗБ-1200">ЗБ-1200</option>
+                            <option value="БПБПЛА-ОК">БПБПЛА-ОК</option>
                         </select>
                         <input type="number" class="bk-count" min="0" max="999" placeholder="0">
                         <span>шт.</span>
@@ -1061,6 +1064,9 @@
                     <option value="РН90">РН90</option>
                     <option value="BAvB-3,5 (МТД)">BAvB-3,5 (МТД)</option>
                     <option value="СВП">СВП</option>
+                            <option value="ЗБ-2500">ЗБ-2500</option>
+                            <option value="ЗБ-1200">ЗБ-1200</option>
+                            <option value="БПБПЛА-ОК">БПБПЛА-ОК</option>
                 </select>
                 <input type="number" class="bk-count" min="0" max="999" placeholder="0">
                 <span>шт.</span>
@@ -1317,6 +1323,18 @@
             
             bkRowCounter = 1;
             targetRowCounter = 1;
+        }
+        
+        function clearAll() {
+            events = [];
+            clearForm();
+            document.getElementById('positionName').value = '';
+            document.getElementById('positionCoords').value = '';
+            document.getElementById('operator').value = '';
+            document.getElementById('secondPilot').value = '';
+            document.getElementById('navigator').value = '';
+            document.getElementById('engineer').value = '';
+            updateEventsList();
         }
         
         function updateEventsList() {
@@ -1969,6 +1987,7 @@
             const timeEnd = endTime.replace(':', '-');
             saveAs(blob, `vampire_${positionFileName}_${timeStart}_${timeEnd}_${fileDate}.docx`);
             console.log('DOCX file generated successfully');
+            clearAll();
             
             } catch (error) {
                 console.error('Error generating DOCX:', error);
@@ -2337,6 +2356,7 @@
             link.href = URL.createObjectURL(blob);
             link.download = `vampire_${positionFileName}_${timeStart}_${timeEnd}_${fileDate}.doc`;
             link.click();
+            clearAll();
         }
         
         window.onload = function() {
@@ -2442,7 +2462,20 @@
         function formatCoordinatesInput(eventOrField) {
             const field = eventOrField.target ? eventOrField.target : eventOrField;
             
-            let value = field.value.replace(/\s/g, ''); // Видаляємо пробіли
+            const cyrillicToLatin = {
+                'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H',
+                'К': 'K', 'М': 'M', 'О': 'O', 'Р': 'P', 'Т': 'T',
+                'Х': 'X', 'У': 'Y',
+                'а': 'A', 'в': 'B', 'с': 'C', 'е': 'E', 'н': 'H',
+                'к': 'K', 'м': 'M', 'о': 'O', 'р': 'P', 'т': 'T',
+                'х': 'X', 'у': 'Y'
+            };
+            
+            let value = field.value
+                .split('')
+                .map(ch => cyrillicToLatin[ch] || ch)
+                .join('')
+                .replace(/\s/g, '');
             
             if (value.length === 0) {
                 field.value = '';
