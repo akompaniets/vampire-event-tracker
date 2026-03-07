@@ -593,41 +593,64 @@
         </div>
         
         <div class="form-section">
-            <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Інформація про екіпаж</h2>
+            <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Управління екіпажами</h2>
             
-            <div class="form-group">
-                <label>Назва позиції</label>
-                <input type="text" id="positionName" placeholder="Назва позиції (наприклад, Страус)">
+            <div id="crewsList" style="margin-bottom: 20px;">
+                <!-- Екіпажі будуть тут -->
             </div>
             
-            <div class="form-group">
-                <label>Координати позиції</label>
-                <input type="text" id="positionCoords" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
-            </div>
+            <button class="btn-primary" onclick="showAddCrewForm()" style="margin-bottom: 20px;">+ Додати екіпаж</button>
             
-            <div class="form-group">
-                <label>Оператор</label>
-                <input type="text" id="operator" placeholder="звання Прізвище Ім'я По батькові">
-            </div>
-            
-            <div class="form-group">
-                <label>Другий пілот</label>
-                <input type="text" id="secondPilot" placeholder="звання Прізвище Ім'я По батькові">
-            </div>
-            
-            <div class="form-group">
-                <label>Штурман</label>
-                <input type="text" id="navigator" placeholder="звання Прізвище Ім'я По батькові">
-            </div>
-            
-            <div class="form-group">
-                <label>Інженер БК</label>
-                <input type="text" id="engineer" placeholder="звання Прізвище Ім'я По батькові">
+            <!-- Форма додавання екіпажу (спочатку прихована) -->
+            <div id="addCrewForm" style="display: none; border: 2px solid #4CAF50; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Новий екіпаж</h3>
+                
+                <div class="form-group">
+                    <label>Назва позиції</label>
+                    <input type="text" id="newCrewName" placeholder="Назва позиції (наприклад, Страус)">
+                </div>
+                
+                <div class="form-group">
+                    <label>Координати позиції</label>
+                    <input type="text" id="newCrewCoords" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
+                </div>
+                
+                <div class="form-group">
+                    <label>Оператор</label>
+                    <input type="text" id="newCrewOperator" placeholder="звання Прізвище Ім'я По батькові">
+                </div>
+                
+                <div class="form-group">
+                    <label>Другий пілот</label>
+                    <input type="text" id="newCrewSecondPilot" placeholder="звання Прізвище Ім'я По батькові">
+                </div>
+                
+                <div class="form-group">
+                    <label>Штурман</label>
+                    <input type="text" id="newCrewNavigator" placeholder="звання Прізвище Ім'я По батькові">
+                </div>
+                
+                <div class="form-group">
+                    <label>Інженер БК</label>
+                    <input type="text" id="newCrewEngineer" placeholder="звання Прізвище Ім'я По батькові">
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-primary" onclick="addCrew()">Зберегти екіпаж</button>
+                    <button class="btn-secondary" onclick="cancelAddCrew()">Скасувати</button>
+                </div>
             </div>
         </div>
         
         <div class="form-section">
             <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Додати нову подію</h2>
+            
+            <div class="form-group">
+                <label>Екіпаж</label>
+                <select id="eventCrew">
+                    <option value="">-- Оберіть екіпаж --</option>
+                </select>
+            </div>
             
             <div class="form-group">
                 <label>Подія</label>
@@ -868,11 +891,13 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.0.2</div>
+        <div>Ver: 0.2</div>
     </div>
 
     <script>
         let events = [];
+        let crews = [];
+        let crewCounter = 1;
         let bkRowCounter = 1;
         let targetRowCounter = 1;
         
@@ -996,6 +1021,36 @@
             formatTimeInput({ target: field });
         }
         
+        function formatTimeInput(event) {
+            const field = event.target;
+            let value = field.value.replace(/[^\d]/g, '');
+            
+            if (value.length === 0) {
+                field.value = '';
+                return;
+            }
+            
+            if (value.length > 4) {
+                value = value.slice(0, 4);
+            }
+            
+            if (value.length === 4) {
+                let hours = parseInt(value.slice(0, 2));
+                if (hours > 23) {
+                    hours = 23;
+                }
+                
+                let minutes = parseInt(value.slice(2, 4));
+                if (minutes > 59) {
+                    minutes = 59;
+                }
+                
+                field.value = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+            } else {
+                field.value = value;
+            }
+        }
+        
         function autofillBkCount(select) {
             if (select.value) {
                 const row = select.closest('.bk-row');
@@ -1086,6 +1141,13 @@
         
         
         function addEvent() {
+            const crewId = parseInt(document.getElementById('eventCrew').value);
+            
+            if (!crewId) {
+                alert('⚠️ Оберіть екіпаж для події!');
+                return;
+            }
+            
             const originalEventType = document.getElementById('field1').value;
             let eventType = originalEventType;
             
@@ -1100,6 +1162,7 @@
             }
             
             const event = {
+                crewId: crewId,
                 type: eventType,
                 sky: document.getElementById('field4').value.trim(),
                 drop: document.getElementById('field5').value.trim(),
@@ -1327,14 +1390,107 @@
         
         function clearAll() {
             events = [];
+            crews = [];
             clearForm();
-            document.getElementById('positionName').value = '';
-            document.getElementById('positionCoords').value = '';
-            document.getElementById('operator').value = '';
-            document.getElementById('secondPilot').value = '';
-            document.getElementById('navigator').value = '';
-            document.getElementById('engineer').value = '';
+            updateCrewsList();
             updateEventsList();
+        }
+        
+        function showAddCrewForm() {
+            document.getElementById('addCrewForm').style.display = 'block';
+        }
+        
+        function cancelAddCrew() {
+            document.getElementById('addCrewForm').style.display = 'none';
+            document.getElementById('newCrewName').value = '';
+            document.getElementById('newCrewCoords').value = '';
+            document.getElementById('newCrewOperator').value = '';
+            document.getElementById('newCrewSecondPilot').value = '';
+            document.getElementById('newCrewNavigator').value = '';
+            document.getElementById('newCrewEngineer').value = '';
+        }
+        
+        function addCrew() {
+            const name = document.getElementById('newCrewName').value.trim();
+            const coords = document.getElementById('newCrewCoords').value.trim();
+            const operator = document.getElementById('newCrewOperator').value.trim();
+            const secondPilot = document.getElementById('newCrewSecondPilot').value.trim();
+            const navigator = document.getElementById('newCrewNavigator').value.trim();
+            const engineer = document.getElementById('newCrewEngineer').value.trim();
+            
+            if (!name) {
+                alert('⚠️ Введіть назву позиції!');
+                return;
+            }
+            
+            const crew = {
+                id: crewCounter++,
+                name: name,
+                coords: coords,
+                operator: operator,
+                secondPilot: secondPilot,
+                navigator: navigator,
+                engineer: engineer
+            };
+            
+            crews.push(crew);
+            cancelAddCrew();
+            updateCrewsList();
+            updateCrewDropdown();
+        }
+        
+        function deleteCrew(crewId) {
+            if (!confirm('Видалити екіпаж? Всі події цього екіпажу також будуть видалені.')) {
+                return;
+            }
+            
+            crews = crews.filter(c => c.id !== crewId);
+            events = events.filter(e => e.crewId !== crewId);
+            
+            updateCrewsList();
+            updateCrewDropdown();
+            updateEventsList();
+        }
+        
+        function updateCrewsList() {
+            const listDiv = document.getElementById('crewsList');
+            
+            if (crews.length === 0) {
+                listDiv.innerHTML = '<div style="padding: 10px; color: #666;">Немає доданих екіпажів. Додайте перший екіпаж.</div>';
+                return;
+            }
+            
+            let html = '';
+            crews.forEach(crew => {
+                const crewEvents = events.filter(e => e.crewId === crew.id);
+                html += `
+                    <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; position: relative;">
+                        <button onclick="deleteCrew(${crew.id})" style="position: absolute; top: 10px; right: 10px; background: #f44336; color: white; border: none; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">✕</button>
+                        <div>
+                            <strong style="font-size: 16px;">ТЗП Vampire «${crew.name}»</strong>
+                            ${crew.coords ? `<span style="color: #666; margin-left: 10px;">(${crew.coords})</span>` : ''}
+                            <div style="margin-top: 5px; font-size: 14px; color: #666;">
+                                Подій: ${crewEvents.length}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            listDiv.innerHTML = html;
+        }
+        
+        function updateCrewDropdown() {
+            const select = document.getElementById('eventCrew');
+            
+            select.innerHTML = '<option value="">-- Оберіть екіпаж --</option>';
+            
+            crews.forEach(crew => {
+                const option = document.createElement('option');
+                option.value = crew.id;
+                option.textContent = `${crew.name}`;
+                select.appendChild(option);
+            });
         }
         
         function updateEventsList() {
@@ -1350,10 +1506,13 @@
             
             let html = '';
             events.forEach((event, index) => {
+                const crew = crews.find(c => c.id === event.crewId);
+                const crewName = crew ? crew.name : '—';
+                
                 html += `
                     <div class="event-card">
                         <button class="delete-event-btn" onclick="deleteEvent(${index})">✕</button>
-                        <h3>Подія #${index + 1}</h3>
+                        <h3>Подія #${index + 1} <span style="color: #4CAF50;">(${crewName})</span></h3>
                         <div class="event-field"><strong>Подія:</strong> ${event.type || '—'}</div>`;
                 
                 if (event.locations) {
@@ -1434,6 +1593,11 @@
                 return;
             }
             
+            if (crews.length === 0) {
+                alert('⚠️ Немає екіпажів!');
+                return;
+            }
+            
             if (typeof docx !== 'undefined' || typeof window.docx !== 'undefined') {
                 saveToFileDOCX();
             } else {
@@ -1442,557 +1606,8 @@
         }
         
         async function saveToFileDOCX() {
-            if (typeof docx === 'undefined' && typeof window.docx === 'undefined') {
-                console.log('DOCX бібліотека не завантажена, використовуємо HTML версію');
-                saveToFileHTML();
-                return;
-            }
-            
-            const docxLib = typeof docx !== 'undefined' ? docx : window.docx;
-            
-            try {
-                const { Document, Paragraph, TextRun, AlignmentType, UnderlineType, convertInchesToTwip } = docxLib;
-            
-            const positionName = document.getElementById('positionName').value.trim() || '—';
-            const positionCoords = document.getElementById('positionCoords').value.trim();
-            const operator = document.getElementById('operator').value.trim();
-            const secondPilot = document.getElementById('secondPilot').value.trim();
-            const navigator = document.getElementById('navigator').value.trim();
-            const engineer = document.getElementById('engineer').value.trim();
-            const flightCount = events.length;
-            
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
-            
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
-            
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
-            
-            const flightsText = declineFlights(flightCount);
-            const coordsText = positionCoords ? ` (${positionCoords})` : '';
-            
-            const paragraphs = [];
-            
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    ПІДСУМКОВЕ ДОНЕСЕННЯ №_____ 1 ББпC 1 ОШП Рота: Вампіри",
-                    bold: true,
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: `1. Час виконання завдання: 17:00 ${yesterdayStr} по 17:00 ${dateStr}.`,
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "2. Напрямок виконання завдання:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "3. Задіяно сил до виконання завдання:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    Екіпажів - 1",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    БпЛА – 1",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: `    Кількість вильотів – ${flightCount}`,
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 },
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "4. Результати виконання завдання за добу:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            const targetSummary = {};
-            const infantryStatus = { "200": 0, "300": 0 };
-            
-            events.forEach(event => {
-                if (event.targets && event.targets.length > 0) {
-                    event.targets.forEach(target => {
-                        if (target.type === 'Піхота') {
-                            if (target.status === '200') {
-                                infantryStatus["200"] += target.count;
-                            } else if (target.status === '300') {
-                                infantryStatus["300"] += target.count;
-                            }
-                        } else {
-                            if (target.status === 'Знищено') {
-                                const key = target.type;
-                                targetSummary[key] = (targetSummary[key] || 0) + target.count;
-                            } else if (target.status === 'Пошкоджено') {
-                                const key = `Пошкоджено ${target.type}`;
-                                targetSummary[key] = (targetSummary[key] || 0) + target.count;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            if (infantryStatus["200"] > 0 || infantryStatus["300"] > 0) {
-                let infantryText = "Нанесено вогневе ураження місць скупчення о/с противника:";
-                if (infantryStatus["200"] > 0) infantryText += ` 200-${infantryStatus["200"]}`;
-                if (infantryStatus["300"] > 0) infantryText += ` 300-${infantryStatus["300"]}`;
-                
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: infantryText,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            const allTargets = [
-                'Укриття', 'Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна', 
-                'БпЛА', 'Човни (катери)', 'Вертольоти', 'ПТЗ', 'Стрілецька зброя', 'ТЗП', 'Ждун', 'Інше'
-            ];
-            
-            allTargets.forEach(targetType => {
-                const destroyedCount = targetSummary[targetType] || 0;
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    ${targetType} – ${destroyedCount > 0 ? destroyedCount : ''}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 }
-                }));
-            });
-            
-            const eventCounts = {};
-            let emergencyDropCount = 0;
-            let boardLostCount = 0;
-            
-            events.forEach(event => {
-                const eventType = event.type || '';
-                eventCounts[eventType] = (eventCounts[eventType] || 0) + 1;
-                
-                if (event.checkboxes?.emergencyDrop) emergencyDropCount++;
-                if (event.checkboxes?.boardLost) boardLostCount++;
-            });
-            
-            if (eventCounts['Мінування']) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    Проведено дистанційне мінування – ${eventCounts['Мінування']}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            if (eventCounts['Доставка посилок']) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    Доставка гуманітарного вантажу – ${eventCounts['Доставка посилок']}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            if (eventCounts['Прокидання']) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    Прокидання – ${eventCounts['Прокидання']}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            if (emergencyDropCount > 0) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    Аварійний скид БК – ${emergencyDropCount}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            if (eventCounts['Переміщення']) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    Переміщення борта – ${eventCounts['Переміщення']}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            if (eventCounts['Тестовий виліт']) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    Тестовий виліт – ${eventCounts['Тестовий виліт']}`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            }
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "5. Витрати БК:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            const bkTotals = {};
-            events.forEach(event => {
-                if (event.ammo && event.ammo.length > 0) {
-                    event.ammo.forEach(bk => {
-                        bkTotals[bk.type] = (bkTotals[bk.type] || 0) + bk.count;
-                    });
-                }
-            });
-            
-            Object.keys(bkTotals).sort().forEach(bkType => {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({
-                        text: `    ${bkType} – ${bkTotals[bkType]} шт.`,
-                        font: "Times New Roman",
-                        size: 24
-                    })],
-                    spacing: { after: 120 },
-                }));
-            });
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "6. Втрати:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    Особовий склад –",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: `    ОіВТ – ${boardLostCount > 0 ? '1' : ''}`,
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    7. Проблемні питання:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    - Висока активність ворожих FPV",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    - Висока активність ворожих крил",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "    - Труднощі в забезпеченні позицій, через наявність ворожих БПЛА на логістичних маршрутах",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({
-                    text: "8. Заплановані дії:",
-                    font: "Times New Roman",
-                    size: 24
-                })],
-                spacing: { after: 120 }
-            }));
-            
-            paragraphs.push(new Paragraph({ text: "", spacing: { after: 240 } }));
-            paragraphs.push(new Paragraph({ text: "", spacing: { after: 240 } }));
-            
-            
-            paragraphs.push(new Paragraph({
-                children: [
-                    new TextRun({
-                        text: `    ТЗП Vampire «${positionName}»${coordsText} особовий склад здійснив ${flightCount} ${flightsText}.`,
-                        bold: true,
-                        font: "Times New Roman",
-                        size: 24
-                    })
-                ],
-                spacing: { after: 120 }
-            }));
-            
-            if (operator) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({ text: `    оператор – ${formatCrewName(operator)}`, font: "Times New Roman", size: 24 })],
-                    spacing: { after: 120 }
-                }));
-            }
-            if (secondPilot) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({ text: `    другий пілот – ${formatCrewName(secondPilot)}`, font: "Times New Roman", size: 24 })],
-                    spacing: { after: 120 }
-                }));
-            }
-            if (navigator) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({ text: `    штурман – ${formatCrewName(navigator)}`, font: "Times New Roman", size: 24 })],
-                    spacing: { after: 120 }
-                }));
-            }
-            if (engineer) {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({ text: `    інженер БК – ${formatCrewName(engineer)}`, font: "Times New Roman", size: 24 })],
-                    spacing: { after: 240 }
-                }));
-            } else {
-                paragraphs.push(new Paragraph({ text: "", spacing: { after: 240 } }));
-            }
-            
-            paragraphs.push(new Paragraph({
-                children: [new TextRun({ 
-                    text: `Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:`, 
-                    font: "Times New Roman", 
-                    size: 24
-                })],
-                spacing: { after: 240 }
-            }));
-            
-            const eventsByType = {};
-            events.forEach(event => {
-                const type = event.type || 'Інше';
-                if (!eventsByType[type]) {
-                    eventsByType[type] = [];
-                }
-                eventsByType[type].push(event);
-            });
-            
-            Object.keys(eventsByType).forEach(eventType => {
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({ 
-                        text: `${eventType}:`, 
-                        bold: true, 
-                        underline: { type: UnderlineType.SINGLE },
-                        font: "Times New Roman", 
-                        size: 24 
-                    })],
-                    spacing: { after: 180 }
-                }));
-                
-                const groupBK = {};
-                
-                eventsByType[eventType].forEach(event => {
-                    const eventTypeLower = eventType.toLowerCase();
-                    
-                    if (event.locations && event.locations.length > 0) {
-                        event.locations.forEach((loc) => {
-                            const timeText = loc.час || event.sky || '—';
-                            const squadText = loc.landmark ? ` ${loc.landmark}` : '';
-                            const coordsText = loc.coords ? ` (${loc.coords})` : '';
-                            
-                            paragraphs.push(new Paragraph({
-                                children: [new TextRun({ 
-                                    text: `${timeText} – ${eventTypeLower}${squadText} за координатами${coordsText}`, 
-                                    font: "Times New Roman", 
-                                    size: 24 
-                                })],
-                                spacing: { after: 120 }
-                            }));
-                        });
-                    } else {
-                        const timeText = event.sky || '—';
-                        const squadText = event.landmark ? ` ${event.landmark}` : '';
-                        const coordsText = event.coords ? ` (${event.coords})` : '';
-                        
-                        paragraphs.push(new Paragraph({
-                            children: [new TextRun({ 
-                                text: `${timeText} – ${eventTypeLower}${squadText} за координатами${coordsText}`, 
-                                font: "Times New Roman", 
-                                size: 24 
-                            })],
-                            spacing: { after: 120 }
-                        }));
-                    }
-                    
-                    event.ammo.forEach(bk => {
-                        if (groupBK[bk.type]) {
-                            groupBK[bk.type] += bk.count;
-                        } else {
-                            groupBK[bk.type] = bk.count;
-                        }
-                    });
-                });
-                
-                if (Object.keys(groupBK).length > 0) {
-                    paragraphs.push(new Paragraph({
-                        children: [new TextRun({ 
-                            text: "Використано БК:", 
-                            bold: true, 
-                            underline: { type: UnderlineType.SINGLE },
-                            font: "Times New Roman", 
-                            size: 24 
-                        })],
-                        spacing: { after: 180 }
-                    }));
-                    
-                    Object.keys(groupBK).sort().forEach(bkType => {
-                        paragraphs.push(new Paragraph({
-                            children: [new TextRun({ 
-                                text: `    ${bkType} – ${groupBK[bkType]} шт.`, 
-                                font: "Times New Roman", 
-                                size: 24 
-                            })],
-                            spacing: { after: 120 }
-                        }));
-                    });
-                }
-                
-                paragraphs.push(new Paragraph({ text: "", spacing: { after: 240 } }));
-            });
-            
-            const totalBK = {};
-            events.forEach(event => {
-                event.ammo.forEach(bk => {
-                    if (totalBK[bk.type]) {
-                        totalBK[bk.type] += bk.count;
-                    } else {
-                        totalBK[bk.type] = bk.count;
-                    }
-                });
-            });
-            
-            if (Object.keys(totalBK).length > 0) {
-                paragraphs.push(new Paragraph({ text: "", spacing: { after: 240 } }));
-                
-                paragraphs.push(new Paragraph({
-                    children: [new TextRun({ 
-                        text: "Загальна кількість БК:", 
-                        bold: true, 
-                        underline: { type: UnderlineType.SINGLE },
-                        font: "Times New Roman", 
-                        size: 24 
-                    })],
-                    spacing: { after: 180 }
-                }));
-                
-                Object.keys(totalBK).sort().forEach(bkType => {
-                    paragraphs.push(new Paragraph({
-                        children: [new TextRun({ 
-                            text: `    ${bkType} – ${totalBK[bkType]} шт.`, 
-                            font: "Times New Roman", 
-                            size: 24 
-                        })],
-                        spacing: { after: 120 }
-                    }));
-                });
-            }
-            
-            const doc = new Document({
-                sections: [{
-                    properties: {
-                        page: {
-                            margin: {
-                                top: convertInchesToTwip(1),
-                                right: convertInchesToTwip(1),
-                                bottom: convertInchesToTwip(1),
-                                left: convertInchesToTwip(1)
-                            }
-                        }
-                    },
-                    children: paragraphs
-                }]
-            });
-            
-            const blob = await docxLib.Packer.toBlob(doc);
-            const fileDate = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
-            const positionFileName = positionName.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
-            const timeStart = startTime.replace(':', '-');
-            const timeEnd = endTime.replace(':', '-');
-            saveAs(blob, `vampire_${positionFileName}_${timeStart}_${timeEnd}_${fileDate}.docx`);
-            console.log('DOCX file generated successfully');
-            clearAll();
-            
-            } catch (error) {
-                console.error('Error generating DOCX:', error);
-                alert('⚠️ Помилка при створенні DOCX файлу: ' + error.message);
-            }
+            alert('DOCX генерація тимчасово недоступна. Використовуємо HTML версію.');
+            saveToFileHTML();
         }
         
         function saveToFileHTML() {
@@ -2001,9 +1616,10 @@
                 return;
             }
             
-            const positionName = document.getElementById('positionName').value.trim() || '—';
-            const positionCoords = document.getElementById('positionCoords').value.trim();
-            const flightCount = events.length;
+            if (crews.length === 0) {
+                alert('⚠️ Немає екіпажів!');
+                return;
+            }
             
             const now = new Date();
             const dateStr = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
@@ -2015,7 +1631,7 @@
             const endTime = document.getElementById('endTime').value;
             
             const eventCounts = {};
-            let infantryEventCount = 0; // Кількість подій "Ураження" з піхотою
+            let infantryEventCount = 0;
             let emergencyDropCount = 0;
             let boardLostCount = 0;
             
@@ -2033,14 +1649,13 @@
             });
             
             const targetSummary = {};
-            const infantryKills = { "200": 0, "300": 0 };
+            const infantryKills = { '200': 0, '300': 0 };
             
             events.forEach(event => {
-                if (event.targets && event.targets.length > 0) {
+                if (event.targets) {
                     event.targets.forEach(target => {
                         if (target.type === 'Піхота') {
-                            if (target.status === '200') infantryKills["200"] += target.count;
-                            if (target.status === '300') infantryKills["300"] += target.count;
+                            infantryKills[target.status] = (infantryKills[target.status] || 0) + target.count;
                         } else {
                             const key = target.status === 'Пошкоджено' ? `Пошкоджено_${target.type}` : target.type;
                             targetSummary[key] = (targetSummary[key] || 0) + target.count;
@@ -2049,7 +1664,8 @@
                 }
             });
             
-            const techTypes = ['Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна', 'БпЛА', 'Човни (катери)', 'Вертольоти', 'ПТЗ'];
+            const techTypes = ['Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна', 
+                               'БпЛА', 'Човни (катери)', 'Вертольоти', 'ПТЗ'];
             let oivtTotal = 0;
             techTypes.forEach(type => {
                 oivtTotal += (targetSummary[type] || 0);
@@ -2058,29 +1674,26 @@
             
             const bkSummary = {};
             events.forEach(event => {
-                if (event.ammo && event.ammo.length > 0) {
+                if (event.ammo) {
                     event.ammo.forEach(item => {
                         bkSummary[item.type] = (bkSummary[item.type] || 0) + item.count;
                     });
                 }
             });
             
-            let html = `<html><head><meta charset='utf-8'><style>
-                body { font-family: 'Times New Roman'; font-size: 12pt; }
-                p { margin: 2pt 0; }
-            </style></head><body>
+            let html = `<html><head><meta charset="UTF-8"><style>
+                body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
+                p { margin: 0; padding: 0; }
+            </style></head><body>`;
             
-<p><b>ПІДСУМКОВЕ ДОНЕСЕННЯ №_____ 1 ББпC 1 ОШП Рота: Вампіри</b></p>
-
+            html += `
+<p><b>1 РУБпАК 2 ББпC 1 ОШП ПІДСУМКОВЕ ДОНЕСЕННЯ №__:</b></p>
 <p>1. Час виконання завдання: ${startTime} ${yesterdayStr} по ${endTime} ${dateStr}.</p>
-
 <p>2. Напрямок виконання завдання:</p>
-
 <p>3. Задіяно сил до виконання завдання:</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Екіпажів – 1</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;БпЛА – 1</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;Екіпажів – ${crews.length}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;БпЛА – ${crews.length}</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Кількість вильотів – ${events.length}</p>
-
 <p>4. Результати виконання завдання за добу:</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Проведено дистанційне мінування – ${eventCounts['Мінування'] || ''}</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Нанесено вогневе ураження місць скупчення о/с противника – ${infantryEventCount || ''}</p>
@@ -2090,375 +1703,210 @@
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Переміщення борта – ${eventCounts['Переміщення'] || ''}</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Тестовий виліт – ${eventCounts['Тестовий виліт'] || ''}</p>
 `;
-
+            
             const hasLosses = (targetSummary['Укриття'] || targetSummary['Пошкоджено_Укриття'] || 
                              infantryKills['200'] || infantryKills['300'] || oivtTotal > 0);
             
             if (hasLosses) {
-                html += `\n<p>5. Втрати противника:</p>\n`;
-                
-                if (targetSummary['Укриття']) {
-                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Знищено укриття – ${targetSummary['Укриття']}</p>\n`;
-                }
-                if (targetSummary['Пошкоджено_Укриття']) {
-                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Пошкоджено укриття – ${targetSummary['Пошкоджено_Укриття']}</p>\n`;
-                }
-                if (infantryKills['200']) {
-                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;О\\c противника 200 – ${infantryKills['200']}</p>\n`;
-                }
-                if (infantryKills['300']) {
-                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;О\\c противника 300 – ${infantryKills['300']}</p>\n`;
-                }
-                if (oivtTotal > 0) {
-                    html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;ОіВТ – ${oivtTotal}</p>\n`;
-                }
+                html += `<p>5. Втрати противника:</p>\n`;
+                if (targetSummary['Укриття']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Знищено укриття – ${targetSummary['Укриття']}</p>\n`;
+                if (targetSummary['Пошкоджено_Укриття']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Пошкоджено укриття – ${targetSummary['Пошкоджено_Укриття']}</p>\n`;
+                if (infantryKills['200']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;О\\c противника 200 – ${infantryKills['200']}</p>\n`;
+                if (infantryKills['300']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;О\\c противника 300 – ${infantryKills['300']}</p>\n`;
+                if (oivtTotal > 0) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;ОіВТ – ${oivtTotal}</p>\n`;
             }
             
-            html += `\n<p>6. Витрати БК:</p>\n`;
+            html += `<p>6. Витрати БК:</p>\n`;
             Object.entries(bkSummary).forEach(([type, count]) => {
                 html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;${type} – ${count} шт.</p>\n`;
             });
             
-            html += `\n<p>7. Втрати:</p>\n`;
+            html += `<p>7. Втрати:</p>\n`;
             if (boardLostCount > 0) {
                 html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;ОіВТ – ${boardLostCount} БпЛА</p>\n`;
             }
             
-            html += `\n<p>8. Проблемні питання:</p>\n`;
+            html += `<p>8. Проблемні питання:</p>\n`;
             html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;- Висока активність ворожих FPV на маршрутах</p>\n`;
             html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;- Активність крил</p>\n`;
             html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;- Труднощі з логістикою</p>\n`;
             
-            html += `\n<p>9. Заплановані дії:</p>\n`;
+            html += `<p>9. Заплановані дії:</p>\n`;
             html += `<p>&nbsp;</p>\n`;
             html += `<p>&nbsp;</p>\n`;
             
-            
-            const coordsText = positionCoords ? ` (${positionCoords})` : '';
-            const flightsText = events.length === 1 ? 'політ' : events.length < 5 ? 'польоти' : 'польотів';
-            
-            html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;<b>ТЗП Vampire «${positionName}»${coordsText} особовий склад здійснив ${events.length} ${flightsText}.</b></p>\n`;
-            
-            const operator = document.getElementById('operator').value.trim();
-            const secondPilot = document.getElementById('secondPilot').value.trim();
-            const navigator = document.getElementById('navigator').value.trim();
-            const engineer = document.getElementById('engineer').value.trim();
-            
-            const formatCrewName = (name) => {
-                const parts = name.trim().split(/\s+/); // Розділяємо по пробілах
+            const declineTimes = (count) => {
+                const lastDigit = count % 10;
+                const lastTwoDigits = count % 100;
                 
-                if (parts.length === 0) return name;
-                
-                // Capitalized all words
-                
-                for (let i = 0; i < parts.length; i++) {
-                    parts[i] = parts[i].charAt(0).toUpperCase() + parts[i].slice(1).toLowerCase();
+                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+                    return 'разів';
                 }
                 
+                if (lastDigit === 1) {
+                    return 'раз';
+                }
                 
-                return parts.join(' ');
+                if (lastDigit >= 2 && lastDigit <= 4) {
+                    return 'рази';
+                }
+                
+                return 'разів';
             };
             
-            if (operator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;оператор – ${formatCrewName(operator)}</p>\n`;
-            if (secondPilot) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;другий пілот – ${formatCrewName(secondPilot)}</p>\n`;
-            if (navigator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;штурман – ${formatCrewName(navigator)}</p>\n`;
-            if (engineer) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;інженер БК – ${formatCrewName(engineer)}</p>\n`;
-            
-            html += `<p>&nbsp;</p>\n`;
-            html += `<p>Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:</p>\n`;
-            
-            const eventsByType = {};
-            events.forEach(event => {
-                const type = event.type || 'Інше';
-                if (!eventsByType[type]) eventsByType[type] = [];
-                eventsByType[type].push(event);
-            });
-            
-            Object.entries(eventsByType).forEach(([type, eventsOfType]) => {
-                html += `<p><b><u>${type}:</u></b></p>\n`;
-                
-                eventsOfType.forEach(event => {
-                    if (type === 'Мінування' && event.locations && event.locations.length > 0) {
-                        const baseTime = event.sky || event.drop || event.ground || '00:00';
-                        const [hours, minutes] = baseTime.split(':').map(Number);
-                        
-                        event.locations.forEach((loc, index) => {
-                            let timeStr = baseTime;
-                            if (index >= 2) {
-                                const newMinutes = minutes + 1;
-                                const newHours = hours + Math.floor(newMinutes / 60);
-                                const finalMinutes = newMinutes % 60;
-                                timeStr = `${String(newHours).padStart(2, '0')}:${String(finalMinutes).padStart(2, '0')}`;
-                            }
-                            
-                            let eventLine = `${timeStr} – мінування`;
-                            
-                            if (loc.landmark) {
-                                eventLine += ` ${loc.landmark}`;
-                            }
-                            if (loc.coords) {
-                                eventLine += ` за координатами (${loc.coords})`;
-                            }
-                            
-                            html += `<p>${eventLine}</p>\n`;
-                        });
-                    } else {
-                        let eventLine = '';
-                        
-                        if (event.sky || event.drop || event.ground) {
-                            const times = [event.sky, event.drop, event.ground].filter(t => t);
-                            eventLine = times[0] + ' – ';
-                        }
-                        
-                        eventLine += type.toLowerCase();
-                        
-                        if (event.targets && event.targets.length > 0) {
-                            const targetGenitive = {
-                                'піхота': 'піхоти',
-                                'укриття': 'укриття',
-                                'танки': 'танка',
-                                'ббм': 'ббм',
-                                'рвіа': 'рвіа',
-                                'ппо': 'ппо',
-                                'ат': 'ат',
-                                'спеціальна': 'спеціальної',
-                                'бпла': 'бпла',
-                                'човни (катери)': 'човна',
-                                'вертольоти': 'вертольота',
-                                'птз': 'птз',
-                                'стрілецька зброя': 'стрілецької зброї',
-                                'тзп': 'тзп',
-                                'ждун': 'ждуна'
-                            };
-                            
-                            const targetTypes = [...new Set(event.targets.map(t => {
-                                const lower = t.type.toLowerCase();
-                                return targetGenitive[lower] || lower;
-                            }))];
-                            eventLine += ` ${targetTypes.join(', ')}`;
-                        }
-                        
-                        if (event.landmark) {
-                            eventLine += ` ${event.landmark}`;
-                        }
-                        if (event.coords) {
-                            eventLine += ` за координатами (${event.coords})`;
-                        }
-                        
-                        html += `<p>${eventLine}</p>\n`;
-                    }
-                });
-                
-                const bkForType = {};
-                eventsOfType.forEach(event => {
-                    if (event.ammo && event.ammo.length > 0) {
-                        event.ammo.forEach(item => {
-                            bkForType[item.type] = (bkForType[item.type] || 0) + item.count;
-                        });
-                    }
-                });
-                
-                if (Object.keys(bkForType).length > 0) {
-                    html += `<p><b><u>Використано БК:</u></b></p>\n`;
-                    Object.entries(bkForType).forEach(([type, count]) => {
-                        html += `<p>${type} – ${count} шт.</p>\n`;
-                    });
-                }
-                
-                html += `<p>&nbsp;</p>\n`;
-            });
-            
-            html += `<p><b><u>Загальна кількість БК:</u></b></p>\n`;
-            Object.entries(bkSummary).forEach(([type, count]) => {
-                html += `<p>${type} – ${count} шт.</p>\n`;
-            });
-            
-            html += `<p>&nbsp;</p>\n`;
-            html += `<p>&nbsp;</p>\n`;
-            
-            html += `<p>========================</p>\n`;
-            html += `<p style="font-size: 14pt;"><b>Для comedy club r.i.p</b></p>\n`;
-            html += `<p>&nbsp;</p>\n`;
-            
-            html += `<p>${yesterdayStr} - ${dateStr}</p>\n`;
-            html += `<p>ТЗП ${positionName}</p>\n`;
-            html += `<p>Вильоти - ${events.length}</p>\n`;
+            const totalEvents = events.length;
+            html += `<p style="font-size: 12pt; text-align: center;"><b>Застосовано Vampire по противнику – ${totalEvents} ${declineTimes(totalEvents)}.</b></p>\n`;
             
             const capitalizeAll = (name) => {
                 if (!name) return '';
-                return name.trim().split(/\s+/).map(word => 
+                return name.trim().split(/\\s+/).map(word => 
                     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
                 ).join(' ');
             };
             
-            html += `<p>Оператор - ${capitalizeAll(operator)}</p>\n`;
-            html += `<p>Штурман - ${capitalizeAll(navigator)}</p>\n`;
-            html += `<p>Інженер БК - ${capitalizeAll(engineer)}</p>\n`;
-            html += `<p>&nbsp;</p>\n`;
-            
-            events.forEach((event, index) => {
-                const eventNum = index + 1;
-                const eventType = event.type || '';
-                const landmark = event.landmark || '';
+            crews.forEach(crew => {
+                const crewEvents = events.filter(e => e.crewId === crew.id);
+                if (crewEvents.length === 0) return;
                 
-                html += `<p>${eventNum}) ${eventType}`;
+                const coordsText = crew.coords ? ` (${crew.coords})` : '';
+                const flightsText = crewEvents.length === 1 ? 'виліт' : crewEvents.length < 5 ? 'вильоти' : 'вильотів';
                 
-                if (eventType === 'Ураження' && event.targets && event.targets.length > 0) {
-                    const targetTypes = [...new Set(event.targets.map(t => t.type.toLowerCase()))];
-                    html += ` ${targetTypes.join(', ')}`;
-                }
+                html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;<b>ТЗП Vampire «${crew.name}»${coordsText} особовий склад здійснив ${crewEvents.length} ${flightsText}.</b></p>\n`;
                 
-                if (landmark) {
-                    html += ` ${landmark}`;
-                }
-                html += `</p>\n`;
+                const formatCrewName = (name) => {
+                    if (!name) return '';
+                    return name.trim().split(/\\s+/).map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                    ).join(' ');
+                };
                 
-                if (event.coords) {
-                    html += `<p>${event.coords}</p>\n`;
-                }
+                if (crew.operator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;оператор – ${formatCrewName(crew.operator)}</p>\n`;
+                if (crew.secondPilot) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;другий пілот – ${formatCrewName(crew.secondPilot)}</p>\n`;
+                if (crew.navigator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;штурман – ${formatCrewName(crew.navigator)}</p>\n`;
+                if (crew.engineer) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;інженер БК – ${formatCrewName(crew.engineer)}</p>\n`;
                 
-                if (event.sky) {
-                    html += `<p>Взліт: ${event.sky}</p>\n`;
-                }
-                if (event.drop) {
-                    html += `<p>Скид: ${event.drop}</p>\n`;
-                }
-                if (event.ground) {
-                    html += `<p>Земля: ${event.ground}</p>\n`;
-                }
+                html += `<p>Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:</p>\n`;
                 
-                if (event.ammo && event.ammo.length > 0) {
-                    const bkList = event.ammo.map(b => `${b.type} - ${b.count} шт`).join(', ');
-                    html += `<p>БК: ${bkList}</p>\n`;
-                }
+                const eventsByType = {};
+                crewEvents.forEach(event => {
+                    const type = event.type || 'Інше';
+                    if (!eventsByType[type]) eventsByType[type] = [];
+                    eventsByType[type].push(event);
+                });
                 
-                if (event.checkboxes?.boardLost) {
-                    const reason = event.checkboxes.lossReason || '';
-                    html += `<p>Борт втрачено: ${reason}</p>\n`;
-                }
+                const targetGenitive = {
+                    'піхота': 'піхоти', 'укриття': 'укриття', 'танки': 'танка',
+                    'ббм': 'ббм', 'рвіа': 'рвіа', 'ппо': 'ппо', 'ат': 'ат',
+                    'спеціальна': 'спеціальної', 'бпла': 'бпла',
+                    'човни (катери)': 'човна', 'вертольоти': 'вертольота',
+                    'птз': 'птз', 'стрілецька зброя': 'стрілецької зброї',
+                    'тзп': 'тзп', 'ждун': 'ждуна'
+                };
                 
-                if (event.comment) {
-                    html += `<p>Коментар: ${event.comment}</p>\n`;
-                }
+                Object.entries(eventsByType).forEach(([type, eventsOfType]) => {
+                    html += `<p><b><u>${type}:</u></b></p>\n`;
+                    
+                    eventsOfType.forEach(event => {
+                        if (type === 'Мінування' && event.locations && event.locations.length > 0) {
+                            const baseTime = event.sky || event.drop || event.ground || '00:00';
+                            const [hours, minutes] = baseTime.split(':').map(Number);
+                            
+                            event.locations.forEach((loc, index) => {
+                                let timeStr = baseTime;
+                                if (index >= 2) {
+                                    const newMinutes = minutes + 1;
+                                    const newHours = hours + Math.floor(newMinutes / 60);
+                                    const finalMinutes = newMinutes % 60;
+                                    timeStr = `${String(newHours).padStart(2, '0')}:${String(finalMinutes).padStart(2, '0')}`;
+                                }
+                                
+                                let eventLine = `${timeStr} – мінування`;
+                                if (loc.landmark) eventLine += ` ${loc.landmark}`;
+                                if (loc.coords) eventLine += ` за координатами (${loc.coords})`;
+                                html += `<p>${eventLine}</p>\n`;
+                            });
+                        } else {
+                            let eventLine = '';
+                            if (event.sky || event.drop || event.ground) {
+                                const times = [event.sky, event.drop, event.ground].filter(t => t);
+                                eventLine = times[0] + ' – ';
+                            }
+                            
+                            eventLine += type.toLowerCase();
+                            
+                            if (event.targets && event.targets.length > 0) {
+                                const targetTypes = [...new Set(event.targets.map(t => {
+                                    const lower = t.type.toLowerCase();
+                                    return targetGenitive[lower] || lower;
+                                }))];
+                                eventLine += ` ${targetTypes.join(', ')}`;
+                            }
+                            
+                            if (event.landmark) eventLine += ` ${event.landmark}`;
+                            if (event.coords) eventLine += ` за координатами (${event.coords})`;
+                            
+                            html += `<p>${eventLine}</p>\n`;
+                        }
+                    });
+                    
+                    const bkForType = {};
+                    eventsOfType.forEach(event => {
+                        if (event.ammo && event.ammo.length > 0) {
+                            event.ammo.forEach(item => {
+                                bkForType[item.type] = (bkForType[item.type] || 0) + item.count;
+                            });
+                        }
+                    });
+                    
+                    if (Object.keys(bkForType).length > 0) {
+                        html += `<p><b><u>Використано БК:</u></b></p>\n`;
+                        Object.entries(bkForType).forEach(([type, count]) => {
+                            html += `<p>${type} – ${count} шт.</p>\n`;
+                        });
+                    }
+                    
+                    html += `<p>&nbsp;</p>\n`;
+                });
                 
+                const crewBkSummary = {};
+                crewEvents.forEach(event => {
+                    if (event.ammo) {
+                        event.ammo.forEach(item => {
+                            crewBkSummary[item.type] = (crewBkSummary[item.type] || 0) + item.count;
+                        });
+                    }
+                });
+                
+                html += `<p><b><u>Загальна кількість БК:</u></b></p>\n`;
+                Object.entries(crewBkSummary).forEach(([type, count]) => {
+                    html += `<p>${type} – ${count} шт.</p>\n`;
+                });
+                
+                html += `<p>&nbsp;</p>\n`;
                 html += `<p>&nbsp;</p>\n`;
             });
             
             html += `</body></html>`;
             
             const fileDate = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
-            const positionFileName = positionName.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
             const timeStart = startTime.replace(':', '-');
             const timeEnd = endTime.replace(':', '-');
+            
+            let filename;
+            if (crews.length === 1) {
+                const crewName = crews[0].name.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
+                filename = `1 РУБпАК_${crewName}_${timeStart}_${timeEnd}_${fileDate}.doc`;
+            } else {
+                filename = `1 РУБпАК_${timeStart}_${timeEnd}_${fileDate}.doc`;
+            }
             
             const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `vampire_${positionFileName}_${timeStart}_${timeEnd}_${fileDate}.doc`;
+            link.download = filename;
             link.click();
             clearAll();
         }
-        
-        window.onload = function() {
-            
-            const timeFields = ['field4', 'field5', 'field6'];
-            timeFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                
-                field.addEventListener('input', function(e) {
-                    setTimeout(() => formatTimeInput(field), 0);
-                });
-                
-                field.addEventListener('keydown', handleTimeBackspace);
-            });
-            
-            const coordFields = ['positionCoords', 'field3'];
-            coordFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                
-                field.addEventListener('input', function(e) {
-                    setTimeout(() => formatCoordinatesInput(field), 0);
-                });
-            });
-        };
-        
-        function formatTimeInputDirect(field) {
-            let cursorPos = field.selectionStart;
-            let oldValue = field.value;
-            
-            let digits = field.value.replace(/\D/g, '');
-            
-            if (digits.length > 4) {
-                digits = digits.slice(0, 4);
-            }
-            
-            let formatted = '';
-            if (digits.length >= 1) {
-                formatted = digits.slice(0, 2);
-            }
-            if (digits.length >= 3) {
-                formatted = digits.slice(0, 2) + ':' + digits.slice(2, 4);
-            }
-            
-            field.value = formatted;
-            
-            if (oldValue.length < formatted.length && cursorPos === 2) {
-                field.setSelectionRange(3, 3); // Після двокрапки
-            }
-        }
-        
-        function formatCoordinatesInputDirect(field) {
-            formatCoordinatesInput(field);
-        }
-        
-        function formatTimeInput(field) {
-            let value = field.value.replace(/[^\d]/g, ''); // Залишаємо тільки цифри
-            
-            if (value.length === 0) {
-                field.value = '';
-                return;
-            }
-            
-            if (value.length > 4) {
-                value = value.slice(0, 4);
-            }
-            
-            if (value.length >= 2) {
-                let hours = parseInt(value.slice(0, 2));
-                if (hours > 23) {
-                    hours = 23;
-                }
-                value = hours.toString().padStart(2, '0') + value.slice(2);
-            }
-            
-            if (value.length >= 4) {
-                let hours = value.slice(0, 2);
-                let minutes = parseInt(value.slice(2, 4));
-                if (minutes > 59) {
-                    minutes = 59;
-                }
-                value = hours + minutes.toString().padStart(2, '0');
-            }
-            
-            if (value.length >= 3) {
-                value = value.slice(0, 2) + ':' + value.slice(2);
-            }
-            
-            field.value = value;
-        }
-        
-        function handleTimeBackspace(e) {
-            if (e.key === 'Backspace') {
-                const value = e.target.value;
-                const cursorPos = e.target.selectionStart;
-                
-                if (cursorPos === 3 && value.charAt(2) === ':') {
-                    e.preventDefault();
-                    e.target.value = value.slice(0, 2);
-                }
-            }
-        }
-        
         function formatCoordinatesInput(eventOrField) {
             const field = eventOrField.target ? eventOrField.target : eventOrField;
             
@@ -2541,6 +1989,30 @@
             
             return 'польотів';
         }
+        
+        window.onload = function() {
+            const timeFields = ['field4', 'field5', 'field6'];
+            timeFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', function(e) {
+                        setTimeout(() => formatTimeInput(e), 0);
+                    });
+                }
+            });
+            
+            const coordFields = ['newCrewCoords', 'field3'];
+            coordFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('input', function(e) {
+                        setTimeout(() => formatCoordinatesInput(field), 0);
+                    });
+                }
+            });
+            
+            updateCrewsList();
+        };
     </script>
 </body>
 </html>
