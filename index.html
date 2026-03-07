@@ -891,7 +891,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2</div>
+        <div>Ver: 0.2.1</div>
     </div>
 
     <script>
@@ -1683,7 +1683,7 @@
             
             let html = `<html><head><meta charset="UTF-8"><style>
                 body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
-                p { margin: 0; padding: 0; }
+                p { margin: 0 0 6pt 0; padding: 0; }
             </style></head><body>`;
             
             html += `
@@ -1775,9 +1775,34 @@
                 
                 const formatCrewName = (name) => {
                     if (!name) return '';
-                    return name.trim().split(/\\s+/).map(word => 
+                    
+                    const rankPattern = /^(головний майстер-сержант|старший майстер-сержант|майстер-сержант|штаб-сержант|головний сержант|старший сержант|молодший сержант|сержант|старший солдат|солдат|рекрут|старший лейтенант|молодший лейтенант|лейтенант|капітан)\s+(.+)$/i;
+                    
+                    const match = name.trim().match(rankPattern);
+                    
+                    if (match) {
+                        const rank = match[1].toLowerCase();
+                        const rest = match[2].trim().split(/\s+/);
+                        
+                        if (rest.length === 0) return rank;
+                        
+                        const surname = rest[0].toUpperCase();
+                        const otherNames = rest.slice(1).map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                        );
+                        
+                        return [rank, surname, ...otherNames].join(' ');
+                    }
+                    
+                    const words = name.trim().split(/\s+/);
+                    if (words.length === 0) return '';
+                    
+                    const surname = words[0].toUpperCase();
+                    const otherNames = words.slice(1).map(word => 
                         word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                    ).join(' ');
+                    );
+                    
+                    return [surname, ...otherNames].join(' ');
                 };
                 
                 if (crew.operator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;оператор – ${formatCrewName(crew.operator)}</p>\n`;
