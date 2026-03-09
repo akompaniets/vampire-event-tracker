@@ -891,7 +891,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.2</div>
+        <div>Ver: 0.2.3</div>
     </div>
 
     <script>
@@ -1766,10 +1766,11 @@
             
             crews.forEach(crew => {
                 const crewEvents = events.filter(e => e.crewId === crew.id);
-                if (crewEvents.length === 0) return;
                 
                 const coordsText = crew.coords ? ` (${crew.coords})` : '';
-                const flightsText = crewEvents.length === 1 ? 'виліт' : crewEvents.length < 5 ? 'вильоти' : 'вильотів';
+                const flightsText = crewEvents.length === 0 ? 'вильотів' : 
+                                   crewEvents.length === 1 ? 'виліт' : 
+                                   crewEvents.length < 5 ? 'вильоти' : 'вильотів';
                 
                 html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;<b>ТЗП Vampire «${crew.name}»${coordsText} особовий склад здійснив ${crewEvents.length} ${flightsText}.</b></p>\n`;
                 
@@ -1811,6 +1812,13 @@
                 if (crew.engineer) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;інженер БК – ${formatCrewName(crew.engineer)}</p>\n`;
                 
                 html += `<p>Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:</p>\n`;
+                
+                if (crewEvents.length === 0) {
+                    html += `<p><b>Вильотів не було.</b></p>\n`;
+                    html += `<p>&nbsp;</p>\n`;
+                    html += `<p>&nbsp;</p>\n`;
+                    return;
+                }
                 
                 const eventsByType = {};
                 crewEvents.forEach(event => {
