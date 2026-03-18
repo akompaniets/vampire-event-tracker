@@ -654,13 +654,14 @@
             
             <div class="form-group">
                 <label>Подія</label>
-                <select id="field1" onchange="toggleMiningLocations(); toggleEventOther()">
+                <select id="field1" onchange="toggleMiningLocations(); toggleEventOther(); toggleBkAndTargets()">
                     <option value="">Оберіть тип події</option>
                     <option value="Ураження">Ураження</option>
-                    <option value="Переміщення">Переміщення</option>
+                    <option value="Переміщення борта">Переміщення борта</option>
                     <option value="Доставка посилок">Доставка посилок</option>
                     <option value="Прокидання">Прокидання</option>
                     <option value="Тестовий виліт">Тестовий виліт</option>
+                    <option value="Аварійний скид">Аварійний скид</option>
                     <option value="Мінування">Мінування</option>
                     <option value="Розмінування">Розмінування</option>
                     <option value="Скидання">Скидання</option>
@@ -753,7 +754,7 @@
             </div>
             
             <div class="form-group">
-                <label>БК</label>
+                <label id="bkLabel">БК</label>
                 <div class="bk-section" id="bkSection">
                     <div class="bk-row" data-row="0">
                         <select class="bk-type" onchange="autofillBkCount(this)">
@@ -818,7 +819,7 @@
             </div>
             
             <div class="form-group">
-                <label>Уражено цілей</label>
+                <label id="targetsLabel">Уражено цілей</label>
                 <div class="targets-section" id="targetsSection">
                     <div class="target-row" data-target-row="0">
                         <select class="target-type" onchange="updateTargetStatus(0)">
@@ -859,10 +860,6 @@
                     <input type="checkbox" id="checkBoardLost" onchange="toggleLossReason()">
                     <label for="checkBoardLost">Борт втрачено</label>
                 </div>
-                <div class="checkbox-item">
-                    <input type="checkbox" id="checkEmergencyDrop">
-                    <label for="checkEmergencyDrop">Аварійний скид</label>
-                </div>
             </div>
             
             <!-- Поле причини втрати (показується тільки якщо Борт втрачено) -->
@@ -891,7 +888,7 @@
     
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.4</div>
+        <div>Ver: 0.2.5</div>
     </div>
 
     <script>
@@ -1010,6 +1007,34 @@
                 eventOtherField.style.display = 'block';
             } else {
                 eventOtherField.style.display = 'none';
+            }
+        }
+        
+        function toggleBkAndTargets() {
+            const eventType = document.getElementById('field1').value;
+            const bkSection = document.getElementById('bkSection');
+            const bkLabel = document.getElementById('bkLabel');
+            const targetsSection = document.getElementById('targetsSection');
+            const targetsLabel = document.getElementById('targetsLabel');
+            
+            const hideAllEvents = ['Переміщення борта', 'Доставка посилок', 'Тестовий виліт'];
+            const hideTargetsOnly = ['Прокидання'];
+            
+            if (hideAllEvents.includes(eventType)) {
+                bkSection.style.display = 'none';
+                bkLabel.style.display = 'none';
+                targetsSection.style.display = 'none';
+                targetsLabel.style.display = 'none';
+            } else if (hideTargetsOnly.includes(eventType)) {
+                bkSection.style.display = 'block';
+                bkLabel.style.display = 'block';
+                targetsSection.style.display = 'none';
+                targetsLabel.style.display = 'none';
+            } else {
+                bkSection.style.display = 'block';
+                bkLabel.style.display = 'block';
+                targetsSection.style.display = 'block';
+                targetsLabel.style.display = 'block';
             }
         }
         
@@ -1172,7 +1197,6 @@
                 targets: [],
                 checkboxes: {
                     boardLost: document.getElementById('checkBoardLost').checked,
-                    emergencyDrop: document.getElementById('checkEmergencyDrop').checked,
                     lossReason: document.getElementById('checkBoardLost').checked ? 
                         document.getElementById('lossReason').value.trim() : ''
                 }
@@ -1378,7 +1402,6 @@
             firstTargetRow.querySelector('.suffix').textContent = 'од.';
             
             document.getElementById('checkBoardLost').checked = false;
-            document.getElementById('checkEmergencyDrop').checked = false;
             
             document.getElementById('eventComment').value = '';
             document.getElementById('lossReason').value = '';
@@ -1537,7 +1560,6 @@
                 
                 const checkboxes = [];
                 if (event.checkboxes?.boardLost) checkboxes.push('Борт втрачено');
-                if (event.checkboxes?.emergencyDrop) checkboxes.push('Аварійний скид');
                 if (checkboxes.length > 0) {
                     html += `<div class="event-field"><strong>відмітки:</strong> ${checkboxes.join(', ')}</div>`;
                 }
@@ -1644,7 +1666,7 @@
                     if (hasInfantry) infantryEventCount++;
                 }
                 
-                if (event.checkboxes?.emergencyDrop) emergencyDropCount++;
+                if (eventType === 'Аварійний скид') emergencyDropCount++;
                 if (event.checkboxes?.boardLost) boardLostCount++;
             });
             
@@ -1700,7 +1722,7 @@
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Прокидання – ${eventCounts['Прокидання'] || ''}</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Доставка гуманітарного вантажу – ${eventCounts['Доставка посилок'] || ''}</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Аварійний скид БК – ${emergencyDropCount || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Переміщення борта – ${eventCounts['Переміщення'] || ''}</p>
+<p>&nbsp;&nbsp;&nbsp;&nbsp;Переміщення борта – ${eventCounts['Переміщення борта'] || ''}</p>
 <p>&nbsp;&nbsp;&nbsp;&nbsp;Тестовий виліт – ${eventCounts['Тестовий виліт'] || ''}</p>
 `;
             
