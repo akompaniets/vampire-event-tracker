@@ -4,574 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Трекер Подій</title>
-    
-    <!-- DOCX бібліотеки з CDN -->
-    <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
-    <script src="https://unpkg.com/file-saver@2.0.5/dist/FileSaver.min.js"></script>
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         @media (max-width: 768px) {
-            * {
-                font-size: 13px;
-            }
-            
-            h1, h2, h3 {
-                font-size: 18px;
-            }
+            * { font-size: 13px; }
+            h1, h2, h3 { font-size: 18px; }
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            background: #f5f5f5;
-            padding: 20px;
-        }
-        
+
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f5f5f5; padding: 20px; }
+        @media (max-width: 768px) { body { padding: 2px; background: white; font-size: 13px; } }
+
+        .container { max-width: 900px; margin: 0 auto; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 30px; }
+        @media (max-width: 768px) { .container { padding: 8px; border-radius: 0; box-shadow: none; max-width: 100%; } }
+
+        h1 { color: #333; margin-bottom: 30px; text-align: center; }
+        @media (max-width: 768px) { h1 { font-size: 24px; margin-bottom: 20px; } }
+
+        .form-section { background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        @media (max-width: 768px) { .form-section { padding: 15px; margin-bottom: 15px; } }
+
+        .form-group { margin-bottom: 15px; }
+
+        .mining-locations { display: none; }
+        .mining-locations.active { display: block; }
+        .mining-location-group { border: 2px solid #2e7d32; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #f1f8f4; }
+        .mining-location-group .form-group:last-child { margin-bottom: 0; }
+
+        .single-location { display: block; }
+        .single-location.hidden { display: none; }
+
+        label { display: block; font-weight: 600; color: #555; margin-bottom: 5px; font-size: 14px; }
+
+        input[type="text"], input[type="number"], select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; transition: border-color 0.3s; }
+        input[type="text"]:focus, input[type="number"]:focus, select:focus { outline: none; border-color: #4CAF50; }
+
+        .bk-section { background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; margin-bottom: 10px; }
+
+        .bk-row { display: grid; grid-template-columns: 1fr 50px 35px 40px; gap: 8px; align-items: center; margin-bottom: 10px; }
+        @media (max-width: 768px) { .bk-row { gap: 6px; grid-template-columns: 1fr 45px 30px 35px; } }
+        .bk-row select { width: 100%; }
+        .bk-row input[type="number"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; text-align: right; }
+        .bk-row span { text-align: left; font-size: 14px; color: #555; }
+        .bk-row .delete-bk-btn { width: 40px; height: 40px; padding: 0; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .bk-row .delete-bk-btn:hover { background: #da190b; }
+
+        .add-bk-btn { background: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: 600; width: 100%; margin-top: 10px; }
+        .add-bk-btn:hover { background: #45a049; }
+        @media (max-width: 768px) { .add-bk-btn { padding: 10px 15px; } }
+
+        .targets-section { background: #fff; padding: 15px; border-radius: 5px; border: 1px solid #e0e0e0; margin-bottom: 10px; }
+
+        .target-row { display: grid; grid-template-columns: 1fr 1fr 50px 35px 40px; gap: 10px; align-items: start; margin-bottom: 10px; }
+        .target-row.has-other { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 10px; }
+        .target-row.has-other .target-type { grid-column: 1; grid-row: 1; }
+        .target-row.has-other .target-other-text { grid-column: 2; grid-row: 1; display: block !important; }
+        .target-row.has-other .target-status { grid-column: 1; grid-row: 2; }
+        .target-row.has-other .target-count { grid-column: 2; grid-row: 2; justify-self: start; width: 80px; }
+        .target-row.has-other .suffix { display: none; }
+        .target-row.has-other .delete-target-btn { grid-column: 2; grid-row: 2; justify-self: end; }
         @media (max-width: 768px) {
-            body {
-                padding: 2px;
-                background: white;
-                font-size: 13px;
-            }
-        }
-        
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 8px;
-                border-radius: 0;
-                box-shadow: none;
-                max-width: 100%;
-            }
-        }
-        
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 24px;
-                margin-bottom: 20px;
-            }
-        }
-        
-        .form-section {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        @media (max-width: 768px) {
-            .form-section {
-                padding: 15px;
-                margin-bottom: 15px;
-            }
-        }
-        
-        .form-group {
-            margin-bottom: 15px;
-        }
-        
-        .mining-locations {
-            display: none;
-        }
-        
-        .mining-locations.active {
-            display: block;
-        }
-        
-        .mining-location-group {
-            border: 2px solid #2e7d32;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            background: #f1f8f4;
-        }
-        
-        .mining-location-group .form-group:last-child {
-            margin-bottom: 0;
-        }
-        
-        .single-location {
-            display: block;
-        }
-        
-        .single-location.hidden {
-            display: none;
-        }
-        
-        label {
-            display: block;
-            font-weight: 600;
-            color: #555;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        
-        input[type="text"],
-        input[type="number"],
-        select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            transition: border-color 0.3s;
-        }
-        
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        select:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
-        
-        .bk-section {
-            background: #fff;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 10px;
-        }
-        
-        .bk-rows-container {
-            margin-bottom: 10px;
-        }
-        
-        .bk-row {
-            display: grid;
-            grid-template-columns: 1fr 50px 35px 40px;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        @media (max-width: 768px) {
-            .bk-row {
-                gap: 6px;
-                grid-template-columns: 1fr 45px 30px 35px;
-            }
-        }
-        
-        .bk-row select {
-            width: 100%;
-        }
-        
-        .bk-row input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            text-align: right;
-        }
-        
-        .bk-row span {
-            text-align: left;
-        }
-        
-        .bk-row .delete-bk-btn {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            background: #f44336;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .bk-row .delete-bk-btn:hover {
-            background: #da190b;
-        }
-        
-        .bk-row span {
-            font-size: 14px;
-            color: #555;
-        }
-        
-        .bk-row button {
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .bk-row button:hover {
-            background: #da190b;
-        }
-        
-        .bk-other-text {
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            width: 100%;
-        }
-        
-        .add-bk-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 10px;
-        }
-        
-        .add-bk-btn:hover {
-            background: #45a049;
-        }
-        
-        @media (max-width: 768px) {
-            .add-bk-btn {
-                padding: 10px 15px;
-            }
-        }
-        
-        .targets-section {
-            background: #fff;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 10px;
-        }
-        
-        .target-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr 50px 35px 40px;
-            gap: 10px;
-            align-items: start;
-            margin-bottom: 10px;
-        }
-        
-        .target-row.has-other {
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto auto;
-            gap: 10px;
-        }
-        
-        .target-row.has-other .target-type {
-            grid-column: 1;
-            grid-row: 1;
-        }
-        
-        .target-row.has-other .target-other-text {
-            grid-column: 2;
-            grid-row: 1;
-            display: block !important;
-        }
-        
-        .target-row.has-other .target-status {
-            grid-column: 1;
-            grid-row: 2;
-        }
-        
-        .target-row.has-other .target-count {
-            grid-column: 2;
-            grid-row: 2;
-            justify-self: start;
-            width: 80px;
-        }
-        
-        .target-row.has-other .suffix {
-            display: none;
-        }
-        
-        .target-row.has-other .delete-target-btn {
-            grid-column: 2;
-            grid-row: 2;
-            justify-self: end;
-        }
-        
-        @media (max-width: 768px) {
-            .target-row {
-                gap: 3px;
-                grid-template-columns: 1fr 1fr 35px 25px 28px;
-            }
-            
-            .target-row.has-other {
-                gap: 8px;
-            }
-        }
-        
-        .target-row select {
-            width: 100%;
-        }
-        
-        .target-other-text {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            width: 100%;
-            grid-column: span 2;
-        }
-        
-        @media (max-width: 768px) {
-            .target-row select {
-                font-size: 13px;
-                padding: 8px 3px;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-                overflow: hidden;
-            }
-        }
-        
-        .target-row input[type="number"] {
-            width: 100%;
-            padding: 10px 5px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            text-align: right;
-        }
-        
-        @media (max-width: 768px) {
-            .target-row input[type="number"] {
-                padding: 8px 2px;
-                font-size: 14px;
-            }
-        }
-        
-        .target-row .suffix {
-            text-align: left;
-            font-size: 14px;
-        }
-        
-        @media (max-width: 768px) {
-            .target-row .suffix {
-                font-size: 12px;
-            }
-        }
-        
-        .target-row .delete-target-btn {
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            background: #f44336;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .target-row .delete-target-btn:hover {
-            background: #da190b;
-        }
-        
-        @media (max-width: 768px) {
-            .target-row .delete-target-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 10px;
-            }
-        }
-        
-        .checkboxes-section {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-        
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .checkbox-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-        
-        .checkbox-item label {
-            margin: 0;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .button-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
-        
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            width: 100%;
-        }
-        
-        .btn-primary {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #45a049;
-        }
-        
-        .btn-secondary {
-            background: #f44336;
-            color: white;
-        }
-        
-        .btn-secondary:hover {
-            background: #da190b;
-        }
-        
-        .btn-save {
-            background: #2196F3;
-            color: white;
-            margin-top: 20px;
-        }
-        
-        .btn-save:hover {
-            background: #0b7dda;
-        }
-        
-        .events-section {
-            margin-top: 30px;
-        }
-        
-        .events-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .events-count {
-            color: #757575;
-            font-size: 14px;
-        }
-        
-        .events-list {
-            background: #f9f9f9;
-            border-radius: 8px;
-            padding: 20px;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .event-card {
-            background: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            border-left: 4px solid #4CAF50;
-            position: relative;
-        }
-        
-        .event-card h3 {
-            color: #4CAF50;
-            margin-bottom: 10px;
-            font-size: 16px;
-            padding-right: 40px;
-        }
-        
-        .delete-event-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #f44336;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1;
-        }
-        
-        .delete-event-btn:hover {
-            background: #da190b;
-        }
-        
-        .event-field {
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #333;
-        }
-        
-        .event-field strong {
-            color: #555;
-            min-width: 100px;
-            display: inline-block;
-        }
-        
-        .no-events {
-            text-align: center;
-            color: #999;
-            padding: 40px;
-            font-style: italic;
-        }
-        
-        .summary-section {
-            background: #e8f5e9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .summary-section h4 {
-            color: #2e7d32;
-            margin-bottom: 10px;
-        }
-        
-        .summary-item {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 5px;
-        }
+            .target-row { gap: 3px; grid-template-columns: 1fr 1fr 35px 25px 28px; }
+            .target-row.has-other { gap: 8px; }
+        }
+        .target-row select { width: 100%; }
+        .target-other-text { padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; width: 100%; grid-column: span 2; }
+        @media (max-width: 768px) { .target-row select { font-size: 13px; padding: 8px 3px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; } }
+        .target-row input[type="number"] { width: 100%; padding: 10px 5px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; text-align: right; }
+        @media (max-width: 768px) { .target-row input[type="number"] { padding: 8px 2px; font-size: 14px; } }
+        .target-row .suffix { text-align: left; font-size: 14px; }
+        @media (max-width: 768px) { .target-row .suffix { font-size: 12px; } }
+        .target-row .delete-target-btn { width: 40px; height: 40px; padding: 0; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .target-row .delete-target-btn:hover { background: #da190b; }
+        @media (max-width: 768px) { .target-row .delete-target-btn { width: 28px; height: 28px; font-size: 10px; } }
+
+        .checkboxes-section { background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 15px; }
+        .checkbox-item { display: flex; align-items: center; margin-bottom: 10px; }
+        .checkbox-item input[type="checkbox"] { width: 20px; height: 20px; margin-right: 10px; cursor: pointer; }
+        .checkbox-item label { margin: 0; cursor: pointer; font-size: 14px; }
+
+        .button-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+
+        button { padding: 12px 24px; border: none; border-radius: 5px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.3s; width: 100%; }
+        .btn-primary { background: #4CAF50; color: white; }
+        .btn-primary:hover { background: #45a049; }
+        .btn-secondary { background: #f44336; color: white; }
+        .btn-secondary:hover { background: #da190b; }
+        .btn-save { background: #2196F3; color: white; margin-top: 20px; }
+        .btn-save:hover { background: #0b7dda; }
+
+        .events-section { margin-top: 30px; }
+        .events-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .events-count { color: #757575; font-size: 14px; }
+        .events-list { background: #f9f9f9; border-radius: 8px; padding: 20px; max-height: 400px; overflow-y: auto; }
+
+        .event-card { background: white; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #4CAF50; position: relative; }
+        .event-card h3 { color: #4CAF50; margin-bottom: 10px; font-size: 16px; padding-right: 40px; }
+        .delete-event-btn { position: absolute; top: 15px; right: 15px; background: #f44336; color: white; border: none; padding: 8px 12px; border-radius: 3px; cursor: pointer; font-size: 16px; font-weight: bold; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        .delete-event-btn:hover { background: #da190b; }
+        .event-field { margin-bottom: 8px; font-size: 14px; color: #333; }
+        .event-field strong { color: #555; min-width: 100px; display: inline-block; }
+        .no-events { text-align: center; color: #999; padding: 40px; font-style: italic; }
+
+        .summary-section { background: #e8f5e9; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 4px solid #4CAF50; }
+        .summary-section h4 { color: #2e7d32; margin-bottom: 10px; }
+        .summary-item { font-size: 14px; color: #333; margin-bottom: 5px; }
+
+        .crew-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; position: relative; }
+        .crew-card .del { position: absolute; top: 10px; right: 10px; background: #f44336; color: white; border: none; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; }
+        .add-crew-form { display: none; border: 2px solid #4CAF50; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📋 Трекер Подій (Vampire)</h1>
-        
+
         <div class="form-section">
             <h3>Звітний період</h3>
             <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 20px;">
@@ -591,290 +139,127 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="form-section">
             <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Управління екіпажами</h2>
-            
-            <div id="crewsList" style="margin-bottom: 20px;">
-                <!-- Екіпажі будуть тут -->
-            </div>
-            
+            <div id="crewsList" style="margin-bottom: 20px;"></div>
             <button class="btn-primary" onclick="showAddCrewForm()" style="margin-bottom: 20px;">+ Додати екіпаж</button>
-            
-            <!-- Форма додавання екіпажу (спочатку прихована) -->
-            <div id="addCrewForm" style="display: none; border: 2px solid #4CAF50; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+
+            <div id="addCrewForm" class="add-crew-form">
                 <h3>Новий екіпаж</h3>
-                
                 <div class="form-group">
                     <label>Назва позиції</label>
                     <input type="text" id="newCrewName" placeholder="Назва позиції (наприклад, Страус)">
                 </div>
-                
                 <div class="form-group">
                     <label>Координати позиції</label>
-                    <input type="text" id="newCrewCoords" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
+                    <input type="text" id="newCrewCoords" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinates(this)">
                 </div>
-                
                 <div class="form-group">
                     <label>Оператор</label>
                     <input type="text" id="newCrewOperator" placeholder="звання Прізвище Ім'я По батькові">
                 </div>
-                
                 <div class="form-group">
                     <label>Другий пілот</label>
                     <input type="text" id="newCrewSecondPilot" placeholder="звання Прізвище Ім'я По батькові">
                 </div>
-                
                 <div class="form-group">
                     <label>Штурман</label>
                     <input type="text" id="newCrewNavigator" placeholder="звання Прізвище Ім'я По батькові">
                 </div>
-                
                 <div class="form-group">
                     <label>Інженер БК</label>
                     <input type="text" id="newCrewEngineer" placeholder="звання Прізвище Ім'я По батькові">
                 </div>
-                
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-primary" onclick="addCrew()">Зберегти екіпаж</button>
                     <button class="btn-secondary" onclick="cancelAddCrew()">Скасувати</button>
                 </div>
             </div>
         </div>
-        
+
         <div class="form-section">
             <h2 style="margin-bottom: 20px; color: #333; font-size: 18px;">Додати нову подію</h2>
-            
+
             <div class="form-group">
                 <label>Екіпаж</label>
-                <select id="eventCrew">
-                    <option value="">-- Оберіть екіпаж --</option>
-                </select>
+                <select id="eventCrew"><option value="">-- Оберіть екіпаж --</option></select>
             </div>
-            
+
             <div class="form-group">
                 <label>Подія</label>
-                <select id="field1" onchange="toggleMiningLocations(); toggleEventOther(); toggleBkAndTargets()">
-                    <option value="">Оберіть тип події</option>
-                    <option value="Ураження">Ураження</option>
-                    <option value="Переміщення борта">Переміщення борта</option>
-                    <option value="Доставка посилок">Доставка посилок</option>
-                    <option value="Прокидання">Прокидання</option>
-                    <option value="Тестовий виліт">Тестовий виліт</option>
-                    <option value="Аварійний скид">Аварійний скид</option>
-                    <option value="Мінування">Мінування</option>
-                    <option value="Розмінування">Розмінування</option>
-                    <option value="Скидання">Скидання</option>
-                    <option value="Інше">Інше</option>
-                </select>
+                <select id="field1" onchange="onEventTypeChange()"></select>
             </div>
-            
-            <!-- Додаткове поле для "Інше" події -->
+
             <div class="form-group" id="eventOtherField" style="display: none;">
                 <label>Опис події</label>
                 <input type="text" id="eventOtherText" placeholder="Введіть опис події">
             </div>
-            
+
             <div class="single-location" id="singleLocation">
                 <div class="form-group">
                     <label>Орієнтир</label>
                     <input type="text" id="field2" placeholder="Назва орієнтиру">
                 </div>
-                
                 <div class="form-group">
                     <label>Координати</label>
-                    <input type="text" id="field3" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
+                    <input type="text" id="field3" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinates(this)">
                 </div>
             </div>
-            
-            <div class="mining-locations" id="miningLocations">
-                <div class="mining-location-group">
-                    <div class="form-group">
-                        <label>Квадрат 1</label>
-                        <input type="text" id="miningSquare1" placeholder="Назва квадрату">
-                    </div>
-                    <div class="form-group">
-                        <label>Координати 1</label>
-                        <input type="text" id="miningCoords1" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
-                    </div>
-                </div>
-                
-                <div class="mining-location-group">
-                    <div class="form-group">
-                        <label>Квадрат 2</label>
-                        <input type="text" id="miningSquare2" placeholder="Назва квадрату">
-                    </div>
-                    <div class="form-group">
-                        <label>Координати 2</label>
-                        <input type="text" id="miningCoords2" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
-                    </div>
-                </div>
-                
-                <div class="mining-location-group">
-                    <div class="form-group">
-                        <label>Квадрат 3</label>
-                        <input type="text" id="miningSquare3" placeholder="Назва квадрату">
-                    </div>
-                    <div class="form-group">
-                        <label>Координати 3</label>
-                        <input type="text" id="miningCoords3" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
-                    </div>
-                </div>
-                
-                <div class="mining-location-group">
-                    <div class="form-group">
-                        <label>Квадрат 4</label>
-                        <input type="text" id="miningSquare4" placeholder="Назва квадрату">
-                    </div>
-                    <div class="form-group">
-                        <label>Координати 4</label>
-                        <input type="text" id="miningCoords4" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinatesInputDirect(this)">
-                    </div>
-                </div>
-            </div>
-            
+
+            <div class="mining-locations" id="miningLocations"></div>
+
             <div class="form-group">
                 <label>Небо</label>
-                <input type="text" id="field4" placeholder="ЧЧ:ХХ" maxlength="5" inputmode="numeric" oninput="formatTimeInputDirect(this)">
+                <input type="text" id="field4" placeholder="ЧЧ:ХХ" maxlength="5" inputmode="numeric" oninput="formatTime(this)">
             </div>
-            
             <div class="form-group">
                 <label>Скид</label>
-                <input type="text" id="field5" placeholder="ЧЧ:ХХ" maxlength="5" inputmode="numeric" oninput="formatTimeInputDirect(this)">
+                <input type="text" id="field5" placeholder="ЧЧ:ХХ" maxlength="5" inputmode="numeric" oninput="formatTime(this)">
             </div>
-            
             <div class="form-group">
                 <label>Земля</label>
-                <input type="text" id="field6" placeholder="ЧЧ:ХХ" maxlength="5" inputmode="numeric" oninput="formatTimeInputDirect(this)">
+                <input type="text" id="field6" placeholder="ЧЧ:ХХ" maxlength="5" inputmode="numeric" oninput="formatTime(this)">
             </div>
-            
+
             <div class="form-group">
                 <label>Коментар</label>
                 <textarea id="eventComment" placeholder="Додатковий коментар до події" rows="3" style="width: 100%; resize: vertical; padding: 8px;"></textarea>
             </div>
-            
+
             <div class="form-group">
                 <label id="bkLabel">БК</label>
                 <div class="bk-section" id="bkSection">
-                    <div class="bk-row" data-row="0">
-                        <select class="bk-type" onchange="autofillBkCount(this)">
-                            <option value="">-- Оберіть тип БК --</option>
-                            <option value="ФАБ 8,5">ФАБ 8,5</option>
-                            <option value="МОА 1200">МОА 1200</option>
-                            <option value="МОА 400">МОА 400</option>
-                            <option value="МОА 900">МОА 900</option>
-                            <option value="УАБ 2,0">УАБ 2,0</option>
-                            <option value="УАБ 2,5">УАБ 2,5</option>
-                            <option value="УАБ 4,0">УАБ 4,0</option>
-                            <option value="ОАБ 1,5">ОАБ 1,5</option>
-                            <option value="ОГ-Б1">ОГ-Б1</option>
-                            <option value="Міна-82мм">Міна-82мм</option>
-                            <option value="Міна-60мм">Міна-60мм</option>
-                            <option value="Міна-120мм">Міна-120мм</option>
-                            <option value="ОЗМ-72">ОЗМ-72</option>
-                            <option value="ПТМ-3">ПТМ-3</option>
-                            <option value="ПТМ-Л1">ПТМ-Л1</option>
-                            <option value="ПТМ-У-01">ПТМ-У-01</option>
-                            <option value="ПТМ-УС-05">ПТМ-УС-05</option>
-                            <option value="ПФМ">ПФМ</option>
-                            <option value="ОЗМ">ОЗМ</option>
-                            <option value="ЗАБ-1200">ЗАБ-1200</option>
-                            <option value="ЗАБ-2,5">ЗАБ-2,5</option>
-                            <option value="РКГ-1600">РКГ-1600</option>
-                            <option value="РКГ-3">РКГ-3</option>
-                            <option value="ТАБ">ТАБ</option>
-                            <option value="ЗБ 1200">ЗБ 1200</option>
-                            <option value="БВР">БВР</option>
-                            <option value="ОГ-7МА">ОГ-7МА</option>
-                            <option value="ТМ-62">ТМ-62</option>
-                            <option value="ЗАЛ-5">ЗАЛ-5</option>
-                            <option value="ЗАЛ-7">ЗАЛ-7</option>
-                            <option value="ЗАЛ 14">ЗАЛ 14</option>
-                            <option value="ОЗП">ОЗП</option>
-                            <option value="РБ-40">РБ-40</option>
-                            <option value="Plbok-1,15">Plbok-1,15</option>
-                            <option value="УДШ-У">УДШ-У</option>
-                            <option value="УДШ-ХП">УДШ-ХП</option>
-                            <option value="ПГ-7м">ПГ-7м</option>
-                            <option value="ПГ-7л">ПГ-7л</option>
-                            <option value="КОМ-1500">КОМ-1500</option>
-                            <option value="БКО АН 1500">БКО АН 1500</option>
-                            <option value="HFB1200F">HFB1200F</option>
-                            <option value="HFB1300F">HFB1300F</option>
-                            <option value="ТАБ 1,5">ТАБ 1,5</option>
-                            <option value="БЦ 3500">БЦ 3500</option>
-                            <option value="РН90">РН90</option>
-                            <option value="BAvB-3,5 (МТД)">BAvB-3,5 (МТД)</option>
-                            <option value="СВП">СВП</option>
-                            <option value="ЗБ-2500">ЗБ-2500</option>
-                            <option value="ЗБ-1200">ЗБ-1200</option>
-                            <option value="БПБПЛА-ОК">БПБПЛА-ОК</option>
-                        </select>
-                        <input type="number" class="bk-count" min="0" max="999" placeholder="0">
-                        <span>шт.</span>
-                        <button class="delete-bk-btn" onclick="removeBkRow(0)" style="visibility: hidden;">✕</button>
-                    </div>
                     <button class="add-bk-btn" onclick="addBkRow()">+ Додати ще один тип БК</button>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label id="targetsLabel">Уражено цілей</label>
                 <div class="targets-section" id="targetsSection">
-                    <div class="target-row" data-target-row="0">
-                        <select class="target-type" onchange="updateTargetStatus(0)">
-                            <option value="">-- Оберіть ціль --</option>
-                            <option value="Піхота">Піхота</option>
-                            <option value="Укриття">Укриття</option>
-                            <option value="Танки">Танки</option>
-                            <option value="ББМ">ББМ</option>
-                            <option value="РВіА">РВіА</option>
-                            <option value="ППО">ППО</option>
-                            <option value="АТ">АТ</option>
-                            <option value="Спеціальна">Спеціальна</option>
-                            <option value="БпЛА">БпЛА</option>
-                            <option value="Човни (катери)">Човни (катери)</option>
-                            <option value="Вертольоти">Вертольоти</option>
-                            <option value="ПТЗ">ПТЗ</option>
-                            <option value="Стрілецька зброя">Стрілецька зброя</option>
-                            <option value="ТЗП">ТЗП</option>
-                            <option value="Ждун">Ждун</option>
-                            <option value="Інше">Інше</option>
-                        </select>
-                        <input type="text" class="target-other-text" placeholder="Опис цілі" style="display: none;">
-                        <select class="target-status">
-                            <option value="">-- Статус --</option>
-                            <option value="Пошкоджено">Пошкоджено</option>
-                            <option value="Знищено">Знищено</option>
-                        </select>
-                        <input type="number" class="target-count" min="0" max="99" placeholder="0">
-                        <span class="suffix">од.</span>
-                        <button class="delete-target-btn" onclick="removeTargetRow(0)" style="visibility: hidden;">✕</button>
-                    </div>
                     <button class="add-bk-btn" onclick="addTargetRow()">+ Додати ціль</button>
                 </div>
             </div>
-            
+
             <div class="checkboxes-section">
                 <div class="checkbox-item">
                     <input type="checkbox" id="checkBoardLost" onchange="toggleLossReason()">
                     <label for="checkBoardLost">Борт втрачено</label>
                 </div>
             </div>
-            
-            <!-- Поле причини втрати (показується тільки якщо Борт втрачено) -->
+
             <div class="form-group" id="lossReasonField" style="display: none;">
                 <label>Причина втрати</label>
                 <input type="text" id="lossReason" placeholder="Причина втрати">
             </div>
-            
+
             <div class="button-group">
                 <button class="btn-primary" onclick="addEvent()">Зберегти подію</button>
                 <button class="btn-secondary" onclick="clearForm()">Очистити форму</button>
                 <button class="btn-save" onclick="saveToFile()">Завантажити звіт</button>
             </div>
         </div>
-        
+
         <div class="events-section">
             <div class="events-header">
                 <h2 style="color: #333; font-size: 18px;">Додані події</h2>
@@ -885,532 +270,454 @@
             </div>
         </div>
     </div>
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 0 20px; color: #999; font-size: 10px;">
+
+    <div class="footer">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.8</div>
+        <div>Ver: 0.2.9</div>
     </div>
 
     <script>
+        'use strict';
+
+        const EVENT_TYPES = ['Ураження', 'Переміщення борта', 'Доставка посилок', 'Прокидання',
+            'Тестовий виліт', 'Аварійний скид', 'Мінування', 'Розмінування', 'Скидання', 'Інше'];
+
+        const BK_TYPES = ['ФАБ 8,5', 'МОА 1200', 'МОА 400', 'МОА 900', 'УАБ 2,0', 'УАБ 2,5', 'УАБ 4,0',
+            'ОАБ 1,5', 'ОГ-Б1', 'Міна-82мм', 'Міна-60мм', 'Міна-120мм', 'ОЗМ-72', 'ПТМ-3', 'ПТМ-Л1',
+            'ПТМ-У-01', 'ПТМ-УС-05', 'ПФМ', 'ОЗМ', 'ЗАБ-1200', 'ЗАБ-2,5', 'РКГ-1600', 'РКГ-3', 'ТАБ',
+            'ЗБ 1200', 'БВР', 'ОГ-7МА', 'ТМ-62', 'ЗАЛ-5', 'ЗАЛ-7', 'ЗАЛ 14', 'ОЗП', 'РБ-40', 'Plbok-1,15',
+            'УДШ-У', 'УДШ-ХП', 'ПГ-7м', 'ПГ-7л', 'КОМ-1500', 'БКО АН 1500', 'HFB1200F', 'HFB1300F',
+            'ТАБ 1,5', 'БЦ 3500', 'РН90', 'BAvB-3,5 (МТД)', 'СВП', 'ЗБ-2500', 'ЗБ-1200', 'БПБПЛА-ОК'];
+
+        const TARGET_TYPES = ['Піхота', 'Укриття', 'Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна',
+            'БпЛА', 'Човни (катери)', 'Вертольоти', 'ПТЗ', 'Стрілецька зброя', 'ТЗП', 'Ждун', 'Інше'];
+
+        // Типи цілей, що рахуються як ОіВТ у зведенні втрат противника
+        const TECH_TYPES = ['Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна', 'БпЛА',
+            'Човни (катери)', 'Вертольоти', 'ПТЗ'];
+
+        // Родовий відмінок назв цілей для тексту звіту
+        const TARGET_GENITIVE = {
+            'піхота': 'піхоти', 'укриття': 'укриття', 'танки': 'танка', 'ббм': 'ббм', 'рвіа': 'рвіа',
+            'ппо': 'ппо', 'ат': 'ат', 'спеціальна': 'спеціальної', 'бпла': 'бпла',
+            'човни (катери)': 'човна', 'вертольоти': 'вертольота', 'птз': 'птз',
+            'стрілецька зброя': 'стрілецької зброї', 'тзп': 'тзп', 'ждун': 'ждуна'
+        };
+
+        // Типи подій, що ховають секції БК/цілей у формі
+        const HIDE_BK_AND_TARGETS = ['Переміщення борта', 'Доставка посилок', 'Тестовий виліт'];
+        const HIDE_TARGETS_ONLY = ['Прокидання'];
+
+        const RANK_RE = /^(головний майстер-сержант|старший майстер-сержант|майстер-сержант|штаб-сержант|головний сержант|старший сержант|молодший сержант|сержант|старший солдат|солдат|рядовий|рекрут|старший лейтенант|молодший лейтенант|лейтенант|капітан)\s+(.+)$/i;
+
+        const INDENT = '&nbsp;&nbsp;&nbsp;&nbsp;';
+
         let events = [];
         let crews = [];
         let crewCounter = 1;
-        let bkRowCounter = 1;
-        let targetRowCounter = 1;
-        
-        function updateTargetStatus(rowId) {
-            const row = document.querySelector(`[data-target-row="${rowId}"]`);
-            if (!row) return;
-            
-            const targetType = row.querySelector('.target-type').value;
-            const statusSelect = row.querySelector('.target-status');
-            const suffix = row.querySelector('.suffix');
-            const otherText = row.querySelector('.target-other-text');
-            const countInput = row.querySelector('.target-count');
-            
-            if (targetType && (!countInput.value || countInput.value === '0')) {
-                countInput.value = '1';
-            }
-            
-            statusSelect.innerHTML = '<option value="">-- Статус --</option>';
-            
-            if (targetType === 'Інше') {
-                row.classList.add('has-other');
-                otherText.style.display = 'block';
-            } else {
-                row.classList.remove('has-other');
-                otherText.style.display = 'none';
-            }
-            
-            if (targetType === 'Піхота') {
-                statusSelect.innerHTML += '<option value="200">200</option>';
-                statusSelect.innerHTML += '<option value="300">300</option>';
-                suffix.textContent = 'чол.';
-            } else if (targetType) {
-                statusSelect.innerHTML += '<option value="Пошкоджено">Пошкоджено</option>';
-                statusSelect.innerHTML += '<option value="Знищено">Знищено</option>';
-                suffix.textContent = 'од.';
-            } else {
-                suffix.textContent = 'од.';
-            }
+        let bkRowCounter = 0;
+        let targetRowCounter = 0;
+
+        const $ = id => document.getElementById(id);
+
+        // <option> розмітка зі списку рядків
+        function optionsHTML(items, placeholder) {
+            return `<option value="">${placeholder}</option>` +
+                items.map(v => `<option value="${v}">${v}</option>`).join('');
         }
-        
-        function addTargetRow() {
-            const targetsSection = document.getElementById('targetsSection');
-            const addButton = targetsSection.querySelector('.add-bk-btn');
-            
-            const newRow = document.createElement('div');
-            newRow.className = 'target-row';
-            newRow.setAttribute('data-target-row', targetRowCounter);
-            
-            newRow.innerHTML = `
-                <select class="target-type" onchange="updateTargetStatus(${targetRowCounter})">
-                    <option value="">-- Оберіть ціль --</option>
-                    <option value="Піхота">Піхота</option>
-                    <option value="Укриття">Укриття</option>
-                    <option value="Танки">Танки</option>
-                    <option value="ББМ">ББМ</option>
-                    <option value="РВіА">РВіА</option>
-                    <option value="ППО">ППО</option>
-                    <option value="АТ">АТ</option>
-                    <option value="Спеціальна">Спеціальна</option>
-                    <option value="БпЛА">БпЛА</option>
-                    <option value="Човни (катери)">Човни (катери)</option>
-                    <option value="Вертольоти">Вертольоти</option>
-                    <option value="ПТЗ">ПТЗ</option>
-                    <option value="Стрілецька зброя">Стрілецька зброя</option>
-                    <option value="ТЗП">ТЗП</option>
-                    <option value="Ждун">Ждун</option>
-                    <option value="Інше">Інше</option>
-                </select>
-                <input type="text" class="target-other-text" placeholder="Опис цілі" style="display: none;">
-                <select class="target-status">
-                    <option value="">-- Статус --</option>
-                    <option value="Пошкоджено">Пошкоджено</option>
-                    <option value="Знищено">Знищено</option>
-                </select>
-                <input type="number" class="target-count" min="0" max="99" placeholder="0">
-                <span class="suffix">од.</span>
-                <button class="delete-target-btn" onclick="removeTargetRow(${targetRowCounter})">✕</button>
-            `;
-            
-            targetsSection.insertBefore(newRow, addButton);
-            targetRowCounter++;
+
+        function titleCase(str) {
+            return str.trim().split(/\s+/)
+                .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
+                .join(' ');
         }
-        
-        function removeTargetRow(rowId) {
-            const row = document.querySelector(`[data-target-row="${rowId}"]`);
-            if (row) {
-                row.remove();
+
+        function pluralUk(count, [one, few, many]) {
+            const d = count % 10, dd = count % 100;
+            if (dd >= 11 && dd <= 14) return many;
+            if (d === 1) return one;
+            if (d >= 2 && d <= 4) return few;
+            return many;
+        }
+
+        function formatCrewName(name, { titleCaseRank = false } = {}) {
+            if (!name) return '';
+            const trimmed = name.trim();
+            const match = trimmed.match(RANK_RE);
+
+            if (match) {
+                const rank = titleCaseRank ? titleCase(match[1]) : match[1].toLowerCase();
+                const rest = match[2].trim().split(/\s+/);
+                if (!rest.length) return rank;
+                return [rank, rest[0].toUpperCase(), ...rest.slice(1).map(titleCaseWord)].join(' ');
             }
+
+            const words = trimmed.split(/\s+/);
+            if (!words.length) return '';
+            return [words[0].toUpperCase(), ...words.slice(1).map(titleCaseWord)].join(' ');
         }
-        
-        function toggleMiningLocations() {
-            const eventType = document.getElementById('field1').value;
-            const singleLocation = document.getElementById('singleLocation');
-            const miningLocations = document.getElementById('miningLocations');
-            
-            if (eventType === 'Мінування') {
-                singleLocation.classList.add('hidden');
-                miningLocations.classList.add('active');
-            } else {
-                singleLocation.classList.remove('hidden');
-                miningLocations.classList.remove('active');
-            }
+
+        const titleCaseWord = w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+
+        function parseTime(timeStr) {
+            if (!timeStr || !timeStr.includes(':')) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
         }
-        
-        function toggleEventOther() {
-            const eventType = document.getElementById('field1').value;
-            const eventOtherField = document.getElementById('eventOtherField');
-            
-            if (eventType === 'Інше') {
-                eventOtherField.style.display = 'block';
-            } else {
-                eventOtherField.style.display = 'none';
-            }
+
+        function addOneMinute(timeStr) {
+            if (!timeStr || !timeStr.includes(':')) return timeStr;
+            let [h, m] = timeStr.split(':').map(Number);
+            m += 1;
+            if (m >= 60) { m = 0; h = (h + 1) % 24; }
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
         }
-        
-        function toggleBkAndTargets() {
-            const eventType = document.getElementById('field1').value;
-            const bkSection = document.getElementById('bkSection');
-            const bkLabel = document.getElementById('bkLabel');
-            const targetsSection = document.getElementById('targetsSection');
-            const targetsLabel = document.getElementById('targetsLabel');
-            
-            const hideAllEvents = ['Переміщення борта', 'Доставка посилок', 'Тестовий виліт'];
-            const hideTargetsOnly = ['Прокидання'];
-            
-            if (hideAllEvents.includes(eventType)) {
-                bkSection.style.display = 'none';
-                bkLabel.style.display = 'none';
-                targetsSection.style.display = 'none';
-                targetsLabel.style.display = 'none';
-            } else if (hideTargetsOnly.includes(eventType)) {
-                bkSection.style.display = 'block';
-                bkLabel.style.display = 'block';
-                targetsSection.style.display = 'none';
-                targetsLabel.style.display = 'none';
-            } else {
-                bkSection.style.display = 'block';
-                bkLabel.style.display = 'block';
-                targetsSection.style.display = 'block';
-                targetsLabel.style.display = 'block';
-            }
+
+        function todayStrings() {
+            const fmt = (d, opts) => d.toLocaleDateString('uk-UA', opts).replace(/\//g, '.');
+            const now = new Date();
+            const yest = new Date(now); yest.setDate(yest.getDate() - 1);
+            const full = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            return {
+                date: fmt(now, full),
+                yesterday: fmt(yest, full),
+                file: fmt(now, { day: '2-digit', month: '2-digit', year: '2-digit' })
+            };
         }
-        
-        function formatCoordinatesInputDirect(field) {
-            formatCoordinatesInput(field);
-        }
-        
-        function formatTimeInputDirect(field) {
-            formatTimeInput({ target: field });
-        }
-        
-        function formatTimeInput(event) {
-            const field = event.target;
-            let value = field.value.replace(/[^\d]/g, '');
-            
-            if (value.length === 0) {
-                field.value = '';
-                return;
-            }
-            
-            if (value.length > 4) {
-                value = value.slice(0, 4);
-            }
-            
+
+        function formatTime(field) {
+            let value = field.value.replace(/[^\d]/g, '').slice(0, 4);
+            if (!value) { field.value = ''; return; }
             if (value.length === 4) {
-                let hours = parseInt(value.slice(0, 2));
-                if (hours > 23) {
-                    hours = 23;
-                }
-                
-                let minutes = parseInt(value.slice(2, 4));
-                if (minutes > 59) {
-                    minutes = 59;
-                }
-                
-                field.value = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+                const h = Math.min(parseInt(value.slice(0, 2)), 23);
+                const m = Math.min(parseInt(value.slice(2, 4)), 59);
+                field.value = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
             } else {
                 field.value = value;
             }
         }
-        
-        function autofillBkCount(select) {
-            if (select.value) {
-                const row = select.closest('.bk-row');
-                const countInput = row.querySelector('.bk-count');
-                if (!countInput.value || countInput.value === '0') {
-                    countInput.value = '1';
-                }
+
+        function formatCoordinates(field) {
+            const cyr2lat = {
+                'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H', 'К': 'K', 'М': 'M',
+                'О': 'O', 'Р': 'P', 'Т': 'T', 'Х': 'X', 'У': 'Y',
+                'а': 'A', 'в': 'B', 'с': 'C', 'е': 'E', 'н': 'H', 'к': 'K', 'м': 'M',
+                'о': 'O', 'р': 'P', 'т': 'T', 'х': 'X', 'у': 'Y'
+            };
+            const raw = field.value.split('').map(ch => cyr2lat[ch] || ch).join('').replace(/\s/g, '');
+            if (!raw) { field.value = ''; return; }
+
+            let f = '';
+            for (let i = 0; i < raw.length && i < 15; i++) {
+                const c = raw[i].toUpperCase();
+                if (i < 2) { if (/\d/.test(c)) f += c; }          // зона: 2 цифри
+                else if (i < 5) { if (/[A-Z]/.test(c)) f += c; }   // літери: 3 шт
+                else { if (/\d/.test(c)) f += c; }                 // числа
             }
+
+            let r = '';
+            if (f.length > 0) r = f.slice(0, 3);
+            if (f.length >= 4) r += ' ' + f.slice(3, 5);
+            if (f.length >= 6) r += ' ' + f.slice(5, 10);
+            if (f.length >= 11) r += ' ' + f.slice(10, 15);
+            field.value = r;
         }
-        
-        function addBkRow() {
-            const bkSection = document.getElementById('bkSection');
-            const addButton = bkSection.querySelector('.add-bk-btn');
-            
-            const newRow = document.createElement('div');
-            newRow.className = 'bk-row';
-            newRow.setAttribute('data-row', bkRowCounter);
-            
-            newRow.innerHTML = `
-                <select class="bk-type" onchange="autofillBkCount(this)">
-                    <option value="">-- Оберіть тип БК --</option>
-                    <option value="ФАБ 8,5">ФАБ 8,5</option>
-                    <option value="МОА 1200">МОА 1200</option>
-                    <option value="МОА 400">МОА 400</option>
-                    <option value="МОА 900">МОА 900</option>
-                    <option value="УАБ 2,0">УАБ 2,0</option>
-                    <option value="УАБ 2,5">УАБ 2,5</option>
-                    <option value="УАБ 4,0">УАБ 4,0</option>
-                    <option value="ОАБ 1,5">ОАБ 1,5</option>
-                    <option value="ОГ-Б1">ОГ-Б1</option>
-                    <option value="Міна-82мм">Міна-82мм</option>
-                    <option value="Міна-60мм">Міна-60мм</option>
-                    <option value="Міна-120мм">Міна-120мм</option>
-                    <option value="ОЗМ-72">ОЗМ-72</option>
-                    <option value="ПТМ-3">ПТМ-3</option>
-                    <option value="ПТМ-Л1">ПТМ-Л1</option>
-                    <option value="ПТМ-У-01">ПТМ-У-01</option>
-                    <option value="ПТМ-УС-05">ПТМ-УС-05</option>
-                    <option value="ПФМ">ПФМ</option>
-                    <option value="ОЗМ">ОЗМ</option>
-                    <option value="ЗАБ-1200">ЗАБ-1200</option>
-                    <option value="ЗАБ-2,5">ЗАБ-2,5</option>
-                    <option value="РКГ-1600">РКГ-1600</option>
-                    <option value="РКГ-3">РКГ-3</option>
-                    <option value="ТАБ">ТАБ</option>
-                    <option value="ЗБ 1200">ЗБ 1200</option>
-                    <option value="БВР">БВР</option>
-                    <option value="ОГ-7МА">ОГ-7МА</option>
-                    <option value="ТМ-62">ТМ-62</option>
-                    <option value="ЗАЛ-5">ЗАЛ-5</option>
-                    <option value="ЗАЛ-7">ЗАЛ-7</option>
-                    <option value="ЗАЛ 14">ЗАЛ 14</option>
-                    <option value="ОЗП">ОЗП</option>
-                    <option value="РБ-40">РБ-40</option>
-                    <option value="Plbok-1,15">Plbok-1,15</option>
-                    <option value="УДШ-У">УДШ-У</option>
-                    <option value="УДШ-ХП">УДШ-ХП</option>
-                    <option value="ПГ-7м">ПГ-7м</option>
-                    <option value="ПГ-7л">ПГ-7л</option>
-                    <option value="КОМ-1500">КОМ-1500</option>
-                    <option value="БКО АН 1500">БКО АН 1500</option>
-                    <option value="HFB1200F">HFB1200F</option>
-                    <option value="HFB1300F">HFB1300F</option>
-                    <option value="ТАБ 1,5">ТАБ 1,5</option>
-                    <option value="БЦ 3500">БЦ 3500</option>
-                    <option value="РН90">РН90</option>
-                    <option value="BAvB-3,5 (МТД)">BAvB-3,5 (МТД)</option>
-                    <option value="СВП">СВП</option>
-                            <option value="ЗБ-2500">ЗБ-2500</option>
-                            <option value="ЗБ-1200">ЗБ-1200</option>
-                            <option value="БПБПЛА-ОК">БПБПЛА-ОК</option>
-                </select>
+
+        function bkRowHTML(id, isFirst) {
+            return `<div class="bk-row" data-row="${id}">
+                <select class="bk-type" onchange="autofillBkCount(this)">${optionsHTML(BK_TYPES, '-- Оберіть тип БК --')}</select>
                 <input type="number" class="bk-count" min="0" max="999" placeholder="0">
                 <span>шт.</span>
-                <button class="delete-bk-btn" onclick="removeBkRow(${bkRowCounter})">✕</button>
-            `;
-            
-            bkSection.insertBefore(newRow, addButton);
-            bkRowCounter++;
+                <button class="delete-bk-btn" onclick="removeBkRow(${id})"${isFirst ? ' style="visibility: hidden;"' : ''}>✕</button>
+            </div>`;
         }
-        
-        function removeBkRow(rowId) {
-            const row = document.querySelector(`[data-row="${rowId}"]`);
-            if (row) {
-                row.remove();
+
+        function addBkRow(isFirst = false) {
+            const addBtn = document.querySelector('#bkSection .add-bk-btn');
+            addBtn.insertAdjacentHTML('beforebegin', bkRowHTML(bkRowCounter++, isFirst));
+        }
+
+        function removeBkRow(id) {
+            const row = document.querySelector(`.bk-row[data-row="${id}"]`);
+            if (row) row.remove();
+        }
+
+        function resetBkRows() {
+            document.querySelectorAll('#bkSection .bk-row').forEach(r => r.remove());
+            bkRowCounter = 0;
+            addBkRow(true);
+        }
+
+        function autofillBkCount(select) {
+            if (!select.value) return;
+            const input = select.closest('.bk-row').querySelector('.bk-count');
+            if (!input.value || input.value === '0') input.value = '1';
+        }
+
+      
+        function targetRowHTML(id, isFirst) {
+            return `<div class="target-row" data-target-row="${id}">
+                <select class="target-type" onchange="updateTargetStatus(${id})">${optionsHTML(TARGET_TYPES, '-- Оберіть ціль --')}</select>
+                <input type="text" class="target-other-text" placeholder="Опис цілі" style="display: none;">
+                <select class="target-status"><option value="">-- Статус --</option><option value="Пошкоджено">Пошкоджено</option><option value="Знищено">Знищено</option></select>
+                <input type="number" class="target-count" min="0" max="99" placeholder="0">
+                <span class="suffix">од.</span>
+                <button class="delete-target-btn" onclick="removeTargetRow(${id})"${isFirst ? ' style="visibility: hidden;"' : ''}>✕</button>
+            </div>`;
+        }
+
+        function addTargetRow(isFirst = false) {
+            const addBtn = document.querySelector('#targetsSection .add-bk-btn');
+            addBtn.insertAdjacentHTML('beforebegin', targetRowHTML(targetRowCounter++, isFirst));
+        }
+
+        function removeTargetRow(id) {
+            const row = document.querySelector(`.target-row[data-target-row="${id}"]`);
+            if (row) row.remove();
+        }
+
+        function resetTargetRows() {
+            document.querySelectorAll('#targetsSection .target-row').forEach(r => r.remove());
+            targetRowCounter = 0;
+            addTargetRow(true);
+        }
+
+        function updateTargetStatus(rowId) {
+            const row = document.querySelector(`.target-row[data-target-row="${rowId}"]`);
+            if (!row) return;
+
+            const type = row.querySelector('.target-type').value;
+            const status = row.querySelector('.target-status');
+            const suffix = row.querySelector('.suffix');
+            const otherText = row.querySelector('.target-other-text');
+            const count = row.querySelector('.target-count');
+
+            if (type && (!count.value || count.value === '0')) count.value = '1';
+
+            row.classList.toggle('has-other', type === 'Інше');
+            otherText.style.display = type === 'Інше' ? 'block' : 'none';
+
+            if (type === 'Піхота') {
+                status.innerHTML = '<option value="">-- Статус --</option><option value="200">200</option><option value="300">300</option>';
+                suffix.textContent = 'чол.';
+            } else if (type) {
+                status.innerHTML = '<option value="">-- Статус --</option><option value="Пошкоджено">Пошкоджено</option><option value="Знищено">Знищено</option>';
+                suffix.textContent = 'од.';
+            } else {
+                status.innerHTML = '<option value="">-- Статус --</option><option value="Пошкоджено">Пошкоджено</option><option value="Знищено">Знищено</option>';
+                suffix.textContent = 'од.';
             }
         }
-        
-        
-        function addEvent() {
-            const crewId = parseInt(document.getElementById('eventCrew').value);
-            
-            if (!crewId) {
-                alert('⚠️ Оберіть екіпаж для події!');
+
+        function onEventTypeChange() {
+            const type = $('field1').value;
+
+            // Локація: квадрати для мінування, інакше одна точка
+            const isMining = type === 'Мінування';
+            $('singleLocation').classList.toggle('hidden', isMining);
+            $('miningLocations').classList.toggle('active', isMining);
+
+            // Поле опису для "Інше"
+            $('eventOtherField').style.display = type === 'Інше' ? 'block' : 'none';
+
+            // Видимість БК / цілей
+            const hideBk = HIDE_BK_AND_TARGETS.includes(type);
+            const hideTargets = hideBk || HIDE_TARGETS_ONLY.includes(type);
+            setVisible('bkSection', !hideBk);
+            setVisible('bkLabel', !hideBk);
+            setVisible('targetsSection', !hideTargets);
+            setVisible('targetsLabel', !hideTargets);
+        }
+
+        function setVisible(id, visible) {
+            $(id).style.display = visible ? 'block' : 'none';
+        }
+
+        function toggleLossReason() {
+            const checked = $('checkBoardLost').checked;
+            $('lossReasonField').style.display = checked ? 'block' : 'none';
+            if (!checked) $('lossReason').value = '';
+        }
+
+        function showAddCrewForm() { $('addCrewForm').style.display = 'block'; }
+
+        function cancelAddCrew() {
+            $('addCrewForm').style.display = 'none';
+            ['newCrewName', 'newCrewCoords', 'newCrewOperator', 'newCrewSecondPilot',
+                'newCrewNavigator', 'newCrewEngineer'].forEach(id => { $(id).value = ''; });
+        }
+
+        function addCrew() {
+            const name = titleCase($('newCrewName').value);   // назва позиції з великої літери
+            if (!name) { alert('⚠️ Введіть назву позиції!'); return; }
+
+            crews.push({
+                id: crewCounter++,
+                name,
+                coords: $('newCrewCoords').value.trim(),
+                operator: $('newCrewOperator').value.trim(),
+                secondPilot: $('newCrewSecondPilot').value.trim(),
+                navigator: $('newCrewNavigator').value.trim(),
+                engineer: $('newCrewEngineer').value.trim()
+            });
+
+            cancelAddCrew();
+            updateCrewsList();
+            updateCrewDropdown();
+        }
+
+        function deleteCrew(crewId) {
+            if (!confirm('Видалити екіпаж? Всі події цього екіпажу також будуть видалені.')) return;
+            crews = crews.filter(c => c.id !== crewId);
+            events = events.filter(e => e.crewId !== crewId);
+            updateCrewsList();
+            updateCrewDropdown();
+            updateEventsList();
+        }
+
+        function updateCrewsList() {
+            const div = $('crewsList');
+            if (!crews.length) {
+                div.innerHTML = '<div style="padding: 10px; color: #666;">Немає доданих екіпажів. Додайте перший екіпаж.</div>';
                 return;
             }
-            
-            const originalEventType = document.getElementById('field1').value;
-            let eventType = originalEventType;
-            
-            if (eventType === 'Інше') {
-                const otherText = document.getElementById('eventOtherText').value.trim();
-                if (otherText) {
-                    eventType = otherText;
-                } else {
-                    alert('⚠️ Введіть опис події!');
-                    return;
-                }
-            }
-            
-            const event = {
-                crewId: crewId,
-                type: eventType,
-                sky: document.getElementById('field4').value.trim(),
-                drop: document.getElementById('field5').value.trim(),
-                ground: document.getElementById('field6').value.trim(),
-                comment: document.getElementById('eventComment').value.trim(),
-                ammo: [],
-                targets: [],
-                checkboxes: {
-                    boardLost: document.getElementById('checkBoardLost').checked,
-                    lossReason: document.getElementById('checkBoardLost').checked ? 
-                        document.getElementById('lossReason').value.trim() : ''
-                }
-            };
-            
-            const targetRows = document.querySelectorAll('.target-row');
-            targetRows.forEach(row => {
+            div.innerHTML = crews.map(crew => {
+                const n = events.filter(e => e.crewId === crew.id).length;
+                const coords = crew.coords ? `<span style="color: #666; margin-left: 10px;">(${crew.coords})</span>` : '';
+                return `<div class="crew-card">
+                    <button class="del" onclick="deleteCrew(${crew.id})">✕</button>
+                    <div>
+                        <strong style="font-size: 16px;">ТЗП Vampire «${crew.name}»</strong>${coords}
+                        <div style="margin-top: 5px; font-size: 14px; color: #666;">Подій: ${n}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function updateCrewDropdown() {
+            $('eventCrew').innerHTML = '<option value="">-- Оберіть екіпаж --</option>' +
+                crews.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function collectTargets() {
+            const result = [];
+            document.querySelectorAll('.target-row').forEach(row => {
                 let type = row.querySelector('.target-type').value;
                 const status = row.querySelector('.target-status').value;
                 const count = parseInt(row.querySelector('.target-count').value) || 0;
                 const suffix = row.querySelector('.suffix').textContent;
                 const otherText = row.querySelector('.target-other-text');
-                
-                if (type === 'Інше' && otherText && otherText.value.trim()) {
-                    type = otherText.value.trim();
-                }
-                
-                if (type && status && count > 0) {
-                    event.targets.push({
-                        type: type,
-                        status: status,
-                        count: count,
-                        suffix: suffix
-                    });
-                }
+                if (type === 'Інше' && otherText && otherText.value.trim()) type = otherText.value.trim();
+                if (type && status && count > 0) result.push({ type, status, count, suffix });
             });
-            
-            if (originalEventType === 'Мінування') {
-                event.locations = [];
-                const baseTime = event.sky; // Час з поля "Небо"
-                
-                for (let i = 1; i <= 4; i++) {
-                    const square = document.getElementById(`miningSquare${i}`).value.trim();
-                    const coords = document.getElementById(`miningCoords${i}`).value.trim();
-                    
-                    if (square || coords) {
-                        let locationTime = baseTime;
-                        if (i >= 3 && baseTime) {
-                            locationTime = addOneMinute(baseTime);
-                        }
-                        
-                        event.locations.push({ 
-                            landmark: square, 
-                            coords: coords,
-                            час: locationTime
-                        });
-                    }
-                }
-            } else {
-                event.landmark = document.getElementById('field2').value.trim();
-                event.coords = document.getElementById('field3').value.trim();
-            }
-            
-            if (!event.drop && event.sky) {
-                event.drop = event.sky;
-            }
-            
-            if (event.sky && event.drop) {
-                const timeNebo = parseTime(event.sky);
-                const timeSkyd = parseTime(event.drop);
-                
-                if (timeSkyd < timeNebo) {
-                    alert('⚠️ Помилка: Час "Скид" не може бути меншим за "Небо"!');
-                    return;
-                }
-            }
-            
-            if (event.drop && event.ground) {
-                const timeSkyd = parseTime(event.drop);
-                const timeZemlya = parseTime(event.ground);
-                
-                if (timeZemlya < timeSkyd) {
-                    alert('⚠️ Помилка: Час "Земля" не може бути меншим за "Скид"!');
-                    return;
-                }
-            }
-            
-            const bkRows = document.querySelectorAll('.bk-row');
-            bkRows.forEach(row => {
+            return result;
+        }
+
+        function collectAmmo() {
+            const result = [];
+            document.querySelectorAll('.bk-row').forEach(row => {
                 const type = row.querySelector('.bk-type').value;
                 const count = parseInt(row.querySelector('.bk-count').value) || 0;
-                
-                if (type && count > 0) {
-                    event.ammo.push({ type, count });
-                }
+                if (type && count > 0) result.push({ type, count });
             });
-            
-            const hasData = event.type || event.landmark || event.coords || 
-                           event.sky || event.drop || event.ground || 
-                           event.comment || event.ammo.length > 0;
-            
-            if (!hasData) {
-                alert('Будь ласка, заповніть хоча б одне поле!');
-                return;
+            return result;
+        }
+
+        function collectMiningLocations(baseTime) {
+            const locations = [];
+            for (let i = 1; i <= 4; i++) {
+                const square = $(`miningSquare${i}`).value.trim();
+                const coords = $(`miningCoords${i}`).value.trim();
+                if (square || coords) {
+                    let time = baseTime;
+                    if (i >= 3 && baseTime) time = addOneMinute(baseTime);
+                    locations.push({ landmark: square, coords, час: time });
+                }
             }
-            
+            return locations;
+        }
+
+        function addEvent() {
+            const crewId = parseInt($('eventCrew').value);
+            if (!crewId) { alert('⚠️ Оберіть екіпаж для події!'); return; }
+
+            const originalType = $('field1').value;
+            let type = originalType;
+            if (type === 'Інше') {
+                const txt = $('eventOtherText').value.trim();
+                if (!txt) { alert('⚠️ Введіть опис події!'); return; }
+                type = txt;
+            }
+
+            const event = {
+                crewId,
+                type,
+                sky: $('field4').value.trim(),
+                drop: $('field5').value.trim(),
+                ground: $('field6').value.trim(),
+                comment: $('eventComment').value.trim(),
+                ammo: collectAmmo(),
+                targets: collectTargets(),
+                checkboxes: {
+                    boardLost: $('checkBoardLost').checked,
+                    lossReason: $('checkBoardLost').checked ? $('lossReason').value.trim() : ''
+                }
+            };
+
+            if (originalType === 'Мінування') {
+                event.locations = collectMiningLocations(event.sky);
+            } else {
+                event.landmark = $('field2').value.trim();
+                event.coords = $('field3').value.trim();
+            }
+
+            // Скид за замовчуванням = Небо
+            if (!event.drop && event.sky) event.drop = event.sky;
+
+            // Валідація послідовності часу
+            if (event.sky && event.drop && parseTime(event.drop) < parseTime(event.sky)) {
+                alert('⚠️ Помилка: Час "Скид" не може бути меншим за "Небо"!'); return;
+            }
+            if (event.drop && event.ground && parseTime(event.ground) < parseTime(event.drop)) {
+                alert('⚠️ Помилка: Час "Земля" не може бути меншим за "Скид"!'); return;
+            }
+
+            const hasData = event.type || event.landmark || event.coords ||
+                event.sky || event.drop || event.ground || event.comment || event.ammo.length > 0;
+            if (!hasData) { alert('Будь ласка, заповніть хоча б одне поле!'); return; }
+
             events.push(event);
             updateEventsList();
             clearForm();
-            
-            const count = events.length;
-            alert(`✅ Подію #${count} додано!`);
+            alert(`✅ Подію #${events.length} додано!`);
         }
-        
-        function formatCrewName(name) {
-            if (!name || !name.trim()) return '';
-            
-            const words = name.trim().split(/\s+/);
-            if (words.length === 0) return '';
-            
-            const firstWord = words[0].toLowerCase();
-            
-            const restWords = words.slice(1).map(word => {
-                if (word.length === 0) return '';
-                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-            });
-            
-            return [firstWord, ...restWords].join(' ');
-        }
-        
-        function parseTime(timeStr) {
-            if (!timeStr || !timeStr.includes(':')) return 0;
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            return hours * 60 + minutes;
-        }
-        
-        function addOneMinute(timeStr) {
-            if (!timeStr || !timeStr.includes(':')) return timeStr;
-            
-            let [hours, minutes] = timeStr.split(':').map(Number);
-            minutes += 1;
-            
-            if (minutes >= 60) {
-                minutes = 0;
-                hours += 1;
-                if (hours >= 24) {
-                    hours = 0;
-                }
-            }
-            
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        }
-        
+
         function deleteEvent(index) {
-            if (confirm(`Ви впевнені, що хочете видалити подію #${index + 1}?`)) {
-                events.splice(index, 1);
-                updateEventsList();
-                alert('✅ Подію видалено!');
-            }
+            if (!confirm(`Ви впевнені, що хочете видалити подію #${index + 1}?`)) return;
+            events.splice(index, 1);
+            updateEventsList();
+            alert('✅ Подію видалено!');
         }
-        
-        function toggleLossReason() {
-            const checkbox = document.getElementById('checkBoardLost');
-            const field = document.getElementById('lossReasonField');
-            field.style.display = checkbox.checked ? 'block' : 'none';
-            if (!checkbox.checked) {
-                document.getElementById('lossReason').value = '';
-            }
-        }
-        
+
+
         function clearForm() {
-            document.getElementById('field1').value = '';
-            document.getElementById('field2').value = '';
-            document.getElementById('field3').value = '';
-            document.getElementById('field4').value = '';
-            document.getElementById('field5').value = '';
-            document.getElementById('field6').value = '';
-            
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById(`miningSquare${i}`).value = '';
-                document.getElementById(`miningCoords${i}`).value = '';
-            }
-            
-            document.getElementById('singleLocation').classList.remove('hidden');
-            document.getElementById('miningLocations').classList.remove('active');
-            
-            const bkSection = document.getElementById('bkSection');
-            const allBkRows = bkSection.querySelectorAll('.bk-row');
-            
-            allBkRows.forEach((row, index) => {
-                if (index > 0) {
-                    row.remove();
-                }
-            });
-            
-            const firstBkRow = bkSection.querySelector('.bk-row');
-            firstBkRow.querySelector('.bk-type').value = '';
-            firstBkRow.querySelector('.bk-count').value = '';
-            
-            const targetsSection = document.getElementById('targetsSection');
-            const allTargetRows = targetsSection.querySelectorAll('.target-row');
-            
-            allTargetRows.forEach((row, index) => {
-                if (index > 0) {
-                    row.remove();
-                }
-            });
-            
-            const firstTargetRow = targetsSection.querySelector('.target-row');
-            firstTargetRow.querySelector('.target-type').value = '';
-            firstTargetRow.querySelector('.target-status').value = '';
-            firstTargetRow.querySelector('.target-count').value = '';
-            firstTargetRow.querySelector('.suffix').textContent = 'од.';
-            
-            document.getElementById('checkBoardLost').checked = false;
-            
-            document.getElementById('eventComment').value = '';
-            document.getElementById('lossReason').value = '';
-            document.getElementById('lossReasonField').style.display = 'none';
-            
-            bkRowCounter = 1;
-            targetRowCounter = 1;
+            ['field1', 'field2', 'field3', 'field4', 'field5', 'field6'].forEach(id => { $(id).value = ''; });
+            for (let i = 1; i <= 4; i++) { $(`miningSquare${i}`).value = ''; $(`miningCoords${i}`).value = ''; }
+
+            $('singleLocation').classList.remove('hidden');
+            $('miningLocations').classList.remove('active');
+
+            resetBkRows();
+            resetTargetRows();
+
+            $('checkBoardLost').checked = false;
+            $('eventComment').value = '';
+            $('lossReason').value = '';
+            $('lossReasonField').style.display = 'none';
+            $('eventOtherField').style.display = 'none';
+            onEventTypeChange();
         }
-        
+
         function clearAll() {
             events = [];
             crews = [];
@@ -1418,640 +725,299 @@
             updateCrewsList();
             updateEventsList();
         }
-        
-        function showAddCrewForm() {
-            document.getElementById('addCrewForm').style.display = 'block';
+
+        function formatBK(ammo) {
+            return ammo.length ? ammo.map(i => `${i.type} - ${i.count} шт`).join(', ') : '—';
         }
-        
-        function cancelAddCrew() {
-            document.getElementById('addCrewForm').style.display = 'none';
-            document.getElementById('newCrewName').value = '';
-            document.getElementById('newCrewCoords').value = '';
-            document.getElementById('newCrewOperator').value = '';
-            document.getElementById('newCrewSecondPilot').value = '';
-            document.getElementById('newCrewNavigator').value = '';
-            document.getElementById('newCrewEngineer').value = '';
-        }
-        
-        function addCrew() {
-            const name = document.getElementById('newCrewName').value.trim();
-            const coords = document.getElementById('newCrewCoords').value.trim();
-            const operator = document.getElementById('newCrewOperator').value.trim();
-            const secondPilot = document.getElementById('newCrewSecondPilot').value.trim();
-            const navigator = document.getElementById('newCrewNavigator').value.trim();
-            const engineer = document.getElementById('newCrewEngineer').value.trim();
-            
-            if (!name) {
-                alert('⚠️ Введіть назву позиції!');
-                return;
-            }
-            
-            const crew = {
-                id: crewCounter++,
-                name: name,
-                coords: coords,
-                operator: operator,
-                secondPilot: secondPilot,
-                navigator: navigator,
-                engineer: engineer
-            };
-            
-            crews.push(crew);
-            cancelAddCrew();
-            updateCrewsList();
-            updateCrewDropdown();
-        }
-        
-        function deleteCrew(crewId) {
-            if (!confirm('Видалити екіпаж? Всі події цього екіпажу також будуть видалені.')) {
-                return;
-            }
-            
-            crews = crews.filter(c => c.id !== crewId);
-            events = events.filter(e => e.crewId !== crewId);
-            
-            updateCrewsList();
-            updateCrewDropdown();
-            updateEventsList();
-        }
-        
-        function updateCrewsList() {
-            const listDiv = document.getElementById('crewsList');
-            
-            if (crews.length === 0) {
-                listDiv.innerHTML = '<div style="padding: 10px; color: #666;">Немає доданих екіпажів. Додайте перший екіпаж.</div>';
-                return;
-            }
-            
-            let html = '';
-            crews.forEach(crew => {
-                const crewEvents = events.filter(e => e.crewId === crew.id);
-                html += `
-                    <div style="border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #f9f9f9; position: relative;">
-                        <button onclick="deleteCrew(${crew.id})" style="position: absolute; top: 10px; right: 10px; background: #f44336; color: white; border: none; width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; padding: 0;">✕</button>
-                        <div>
-                            <strong style="font-size: 16px;">ТЗП Vampire «${crew.name}»</strong>
-                            ${crew.coords ? `<span style="color: #666; margin-left: 10px;">(${crew.coords})</span>` : ''}
-                            <div style="margin-top: 5px; font-size: 14px; color: #666;">
-                                Подій: ${crewEvents.length}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            listDiv.innerHTML = html;
-        }
-        
-        function updateCrewDropdown() {
-            const select = document.getElementById('eventCrew');
-            
-            select.innerHTML = '<option value="">-- Оберіть екіпаж --</option>';
-            
-            crews.forEach(crew => {
-                const option = document.createElement('option');
-                option.value = crew.id;
-                option.textContent = `${crew.name}`;
-                select.appendChild(option);
-            });
-        }
-        
+
         function updateEventsList() {
-            const listDiv = document.getElementById('eventsList');
-            const countSpan = document.getElementById('eventsCount');
-            
-            countSpan.textContent = `Всього: ${events.length}`;
-            
-            if (events.length === 0) {
-                listDiv.innerHTML = '<div class="no-events">Поки що немає доданих подій</div>';
+            const div = $('eventsList');
+            $('eventsCount').textContent = `Всього: ${events.length}`;
+
+            if (!events.length) {
+                div.innerHTML = '<div class="no-events">Поки що немає доданих подій</div>';
                 return;
             }
-            
-            let html = '';
-            events.forEach((event, index) => {
+
+            let html = events.map((event, index) => {
                 const crew = crews.find(c => c.id === event.crewId);
                 const crewName = crew ? crew.name : '—';
-                
-                html += `
-                    <div class="event-card">
-                        <button class="delete-event-btn" onclick="deleteEvent(${index})">✕</button>
-                        <h3>Подія #${index + 1} <span style="color: #4CAF50;">(${crewName})</span></h3>
-                        <div class="event-field"><strong>Подія:</strong> ${event.type || '—'}</div>`;
-                
+
+                let card = `<div class="event-card">
+                    <button class="delete-event-btn" onclick="deleteEvent(${index})">✕</button>
+                    <h3>Подія #${index + 1} <span style="color: #4CAF50;">(${crewName})</span></h3>
+                    <div class="event-field"><strong>Подія:</strong> ${event.type || '—'}</div>`;
+
                 if (event.locations) {
                     event.locations.forEach((loc, i) => {
-                        html += `<div class="event-field"><strong>Орієнтир ${i+1}:</strong> ${loc.landmark || '—'}</div>`;
-                        html += `<div class="event-field"><strong>Координати ${i+1}:</strong> ${loc.coords || '—'}</div>`;
+                        card += `<div class="event-field"><strong>Орієнтир ${i + 1}:</strong> ${loc.landmark || '—'}</div>`;
+                        card += `<div class="event-field"><strong>Координати ${i + 1}:</strong> ${loc.coords || '—'}</div>`;
                     });
                 } else {
-                    html += `<div class="event-field"><strong>Орієнтир:</strong> ${event.landmark || '—'}</div>`;
-                    html += `<div class="event-field"><strong>Координати:</strong> ${event.coords || '—'}</div>`;
+                    card += `<div class="event-field"><strong>Орієнтир:</strong> ${event.landmark || '—'}</div>`;
+                    card += `<div class="event-field"><strong>Координати:</strong> ${event.coords || '—'}</div>`;
                 }
-                
-                html += `<div class="event-field"><strong>Небо:</strong> ${event.sky || '—'}</div>
-                        <div class="event-field"><strong>Скид:</strong> ${event.drop || '—'}</div>
-                        <div class="event-field"><strong>Земля:</strong> ${event.ground || '—'}</div>
-                        <div class="event-field"><strong>БК:</strong> ${formatBK(event.ammo)}</div>`;
-                
-                if (event.targets && event.targets.length > 0) {
-                    const targetsStr = event.targets.map(t => `${t.type}: ${t.status} - ${t.count} ${t.suffix}`).join(', ');
-                    html += `<div class="event-field"><strong>Цілі:</strong> ${targetsStr}</div>`;
+
+                card += `<div class="event-field"><strong>Небо:</strong> ${event.sky || '—'}</div>
+                    <div class="event-field"><strong>Скид:</strong> ${event.drop || '—'}</div>
+                    <div class="event-field"><strong>Земля:</strong> ${event.ground || '—'}</div>
+                    <div class="event-field"><strong>БК:</strong> ${formatBK(event.ammo)}</div>`;
+
+                if (event.targets && event.targets.length) {
+                    const t = event.targets.map(t => `${t.type}: ${t.status} - ${t.count} ${t.suffix}`).join(', ');
+                    card += `<div class="event-field"><strong>Цілі:</strong> ${t}</div>`;
                 }
-                
-                const checkboxes = [];
-                if (event.checkboxes?.boardLost) checkboxes.push('Борт втрачено');
-                if (checkboxes.length > 0) {
-                    html += `<div class="event-field"><strong>відмітки:</strong> ${checkboxes.join(', ')}</div>`;
+                if (event.checkboxes?.boardLost) {
+                    card += `<div class="event-field"><strong>відмітки:</strong> Борт втрачено</div>`;
                 }
-                
-                html += `</div>
-                `;
-            });
-            
-            html += generateBKSummary();
-            
-            listDiv.innerHTML = html;
+                return card + '</div>';
+            }).join('');
+
+            html += buildBKSummaryCard();
+            div.innerHTML = html;
         }
-        
-        function formatBK(bkArray) {
-            if (bkArray.length === 0) return '—';
-            return bkArray.map(item => `${item.type} - ${item.count} шт`).join(', ');
+
+        function buildBKSummaryCard() {
+            const totals = aggregateAmmo(events);
+            const types = Object.keys(totals).sort();
+            if (!types.length) return '';
+            return '<div class="summary-section"><h4>Загальна кількість БК:</h4>' +
+                types.map(t => `<div class="summary-item">- ${t}: ${totals[t]} шт</div>`).join('') +
+                '</div>';
         }
-        
-        function generateBKSummary() {
-            const bkTotals = {};
-            
-            events.forEach(event => {
-                event.ammo.forEach(item => {
-                    if (bkTotals[item.type]) {
-                        bkTotals[item.type] += item.count;
-                    } else {
-                        bkTotals[item.type] = item.count;
-                    }
-                });
-            });
-            
-            if (Object.keys(bkTotals).length === 0) {
-                return '';
-            }
-            
-            let html = '<div class="summary-section">';
-            html += '<h4>Загальна кількість БК:</h4>';
-            
-            const sortedTypes = Object.keys(bkTotals).sort();
-            
-            sortedTypes.forEach(type => {
-                html += `<div class="summary-item">- ${type}: ${bkTotals[type]} шт</div>`;
-            });
-            
-            html += '</div>';
-            
-            return html;
+
+        // Сумує БК по списку подій → { тип: кількість }
+        function aggregateAmmo(eventList) {
+            const totals = {};
+            eventList.forEach(ev => (ev.ammo || []).forEach(i => {
+                totals[i.type] = (totals[i.type] || 0) + i.count;
+            }));
+            return totals;
         }
-        
+
         function saveToFile() {
-            if (events.length === 0) {
-                alert('⚠️ Немає подій для збереження!');
-                return;
-            }
-            
-            if (crews.length === 0) {
-                alert('⚠️ Немає екіпажів!');
-                return;
-            }
-            
-            if (typeof docx !== 'undefined' || typeof window.docx !== 'undefined') {
-                saveToFileDOCX();
-            } else {
-                saveToFileHTML();
-            }
+            if (!events.length) { alert('⚠️ Немає подій для збереження!'); return; }
+            if (!crews.length) { alert('⚠️ Немає екіпажів!'); return; }
+            downloadReport(buildReportHTML());
         }
-        
-        async function saveToFileDOCX() {
-            alert('DOCX генерація тимчасово недоступна. Використовуємо HTML версію.');
-            saveToFileHTML();
-        }
-        
-        function saveToFileHTML() {
-            if (events.length === 0) {
-                alert('⚠️ Немає подій для збереження!');
-                return;
-            }
-            
-            if (crews.length === 0) {
-                alert('⚠️ Немає екіпажів!');
-                return;
-            }
-            
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const yesterdayStr = yesterday.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '.');
-            
-            const startTime = document.getElementById('startTime').value;
-            const endTime = document.getElementById('endTime').value;
-            
+
+        function buildReportHTML() {
+            const d = todayStrings();
+            const startTime = $('startTime').value;
+            const endTime = $('endTime').value;
+
+            // --- зведена статистика подій ---
             const eventCounts = {};
-            let infantryEventCount = 0;
-            let emergencyDropCount = 0;
-            let boardLostCount = 0;
-            
-            events.forEach(event => {
-                const eventType = event.type || '';
-                eventCounts[eventType] = (eventCounts[eventType] || 0) + 1;
-                
-                if (eventType === 'Ураження' && event.targets) {
-                    const hasInfantry = event.targets.some(t => t.type === 'Піхота');
-                    if (hasInfantry) infantryEventCount++;
-                }
-                
-                if (eventType === 'Аварійний скид') emergencyDropCount++;
-                if (event.checkboxes?.boardLost) boardLostCount++;
+            let infantryEventCount = 0, emergencyDropCount = 0, boardLostCount = 0;
+            events.forEach(ev => {
+                eventCounts[ev.type] = (eventCounts[ev.type] || 0) + 1;
+                if (ev.type === 'Ураження' && ev.targets?.some(t => t.type === 'Піхота')) infantryEventCount++;
+                if (ev.type === 'Аварійний скид') emergencyDropCount++;
+                if (ev.checkboxes?.boardLost) boardLostCount++;
             });
-            
+
+            // --- втрати противника ---
             const targetSummary = {};
             const infantryKills = { '200': 0, '300': 0 };
-            
-            events.forEach(event => {
-                if (event.targets) {
-                    event.targets.forEach(target => {
-                        if (target.type === 'Піхота') {
-                            infantryKills[target.status] = (infantryKills[target.status] || 0) + target.count;
-                        } else {
-                            const key = target.status === 'Пошкоджено' ? `Пошкоджено_${target.type}` : target.type;
-                            targetSummary[key] = (targetSummary[key] || 0) + target.count;
-                        }
-                    });
+            events.forEach(ev => (ev.targets || []).forEach(t => {
+                if (t.type === 'Піхота') {
+                    infantryKills[t.status] = (infantryKills[t.status] || 0) + t.count;
+                } else {
+                    const key = t.status === 'Пошкоджено' ? `Пошкоджено_${t.type}` : t.type;
+                    targetSummary[key] = (targetSummary[key] || 0) + t.count;
                 }
-            });
-            
-            const techTypes = ['Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна', 
-                               'БпЛА', 'Човни (катери)', 'Вертольоти', 'ПТЗ'];
+            }));
             let oivtTotal = 0;
-            techTypes.forEach(type => {
-                oivtTotal += (targetSummary[type] || 0);
-                oivtTotal += (targetSummary[`Пошкоджено_${type}`] || 0);
+            TECH_TYPES.forEach(t => {
+                oivtTotal += (targetSummary[t] || 0) + (targetSummary[`Пошкоджено_${t}`] || 0);
             });
-            
-            const bkSummary = {};
-            events.forEach(event => {
-                if (event.ammo) {
-                    event.ammo.forEach(item => {
-                        bkSummary[item.type] = (bkSummary[item.type] || 0) + item.count;
-                    });
-                }
-            });
-            
-            let html = `<html><head><meta charset="UTF-8"><style>
-                body { font-family: 'Times New Roman', Times, serif; font-size: 12pt; }
-                p { margin: 0; padding: 0; }
-            </style></head><body>`;
-            
-            html += `
-<p><b>1 РУБпАК 2 ББпC 1 ОШП ПІДСУМКОВЕ ДОНЕСЕННЯ №__:</b></p>
-<p>1. Час виконання завдання: ${startTime} ${yesterdayStr} по ${endTime} ${dateStr}.</p>
-<p>2. Напрямок виконання завдання:</p>
-<p>3. Задіяно сил до виконання завдання:</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Екіпажів – ${crews.length}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;БпЛА – ${crews.length}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Кількість вильотів – ${events.length}</p>
-<p>4. Результати виконання завдання за добу:</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Проведено дистанційне мінування – ${eventCounts['Мінування'] || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Нанесено вогневе ураження місць скупчення о/с противника – ${infantryEventCount || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Прокидання – ${eventCounts['Прокидання'] || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Доставка гуманітарного вантажу – ${eventCounts['Доставка посилок'] || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Аварійний скид БК – ${emergencyDropCount || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Переміщення борта – ${eventCounts['Переміщення борта'] || ''}</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;Тестовий виліт – ${eventCounts['Тестовий виліт'] || ''}</p>
-`;
-            
-            const hasLosses = (targetSummary['Укриття'] || targetSummary['Пошкоджено_Укриття'] || 
-                             infantryKills['200'] || infantryKills['300'] || oivtTotal > 0);
-            
-            if (hasLosses) {
-                html += `<p>5. Втрати противника:</p>\n`;
-                if (targetSummary['Укриття']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Знищено укриття – ${targetSummary['Укриття']}</p>\n`;
-                if (targetSummary['Пошкоджено_Укриття']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;Пошкоджено укриття – ${targetSummary['Пошкоджено_Укриття']}</p>\n`;
-                if (infantryKills['200']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;О\\c противника 200 – ${infantryKills['200']}</p>\n`;
-                if (infantryKills['300']) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;О\\c противника 300 – ${infantryKills['300']}</p>\n`;
-                if (oivtTotal > 0) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;ОіВТ – ${oivtTotal}</p>\n`;
+
+            const bkSummary = aggregateAmmo(events);
+
+            const L = [];
+            const p = (s = '') => L.push(`<p>${s}</p>`);
+            const ind = s => L.push(`<p>${INDENT}${s}</p>`);
+
+            L.push(`<html><head><meta charset="UTF-8"><style>body{font-family:'Times New Roman',Times,serif;font-size:12pt;}p{margin:0;padding:0;}</style></head><body>`);
+
+            p('<b>1 РУБпАК 2 ББпC 1 ОШП ПІДСУМКОВЕ ДОНЕСЕННЯ №__:</b>');
+            p(`1. Час виконання завдання: ${startTime} ${d.yesterday} по ${endTime} ${d.date}.`);
+            p('2. Напрямок виконання завдання:');
+            p('3. Задіяно сил до виконання завдання:');
+            ind(`Екіпажів – ${crews.length}`);
+            ind(`БпЛА – ${crews.length}`);
+            ind(`Кількість вильотів – ${events.length}`);
+            p('4. Результати виконання завдання за добу:');
+            ind(`Проведено дистанційне мінування – ${eventCounts['Мінування'] || ''}`);
+            ind(`Нанесено вогневе ураження місць скупчення о/с противника – ${infantryEventCount || ''}`);
+            ind(`Прокидання – ${eventCounts['Прокидання'] || ''}`);
+            ind(`Доставка гуманітарного вантажу – ${eventCounts['Доставка посилок'] || ''}`);
+            ind(`Аварійний скид БК – ${emergencyDropCount || ''}`);
+            ind(`Переміщення борта – ${eventCounts['Переміщення борта'] || ''}`);
+            ind(`Тестовий виліт – ${eventCounts['Тестовий виліт'] || ''}`);
+
+            // Пункт 5 показується завжди; підпункти — лише за наявності значень
+            p('5. Втрати противника:');
+            if (targetSummary['Укриття']) ind(`Знищено укриття – ${targetSummary['Укриття']}`);
+            if (targetSummary['Пошкоджено_Укриття']) ind(`Пошкоджено укриття – ${targetSummary['Пошкоджено_Укриття']}`);
+            if (infantryKills['200']) ind(`О\\c противника 200 – ${infantryKills['200']}`);
+            if (infantryKills['300']) ind(`О\\c противника 300 – ${infantryKills['300']}`);
+            if (oivtTotal > 0) ind(`ОіВТ – ${oivtTotal}`);
+
+            p('6. Витрати БК:');
+            Object.entries(bkSummary).forEach(([t, c]) => ind(`${t} – ${c} шт.`));
+
+            p('7. Втрати:');
+            if (boardLostCount > 0) ind(`ОіВТ – ${boardLostCount} БпЛА`);
+
+            p('8. Проблемні питання:');
+            ind('- Висока активність ворожих FPV на маршрутах');
+            ind('- Активність крил');
+            ind('- Труднощі з логістикою');
+
+            p('9. Заплановані дії:');
+            p('&nbsp;');
+            p('&nbsp;');
+
+            L.push(`<p style="font-size: 12pt; text-align: center;"><b>Застосовано Vampire по противнику – ${events.length} ${pluralUk(events.length, ['раз', 'рази', 'разів'])}.</b></p>`);
+
+            // --- детальний блок по екіпажах ---
+            crews.forEach(crew => buildCrewSection(L, crew, startTime, endTime, d));
+
+            // --- comedy club ---
+            L.push('<p>========================</p>');
+            L.push('<p style="font-size: 14pt;"><b>Для comedy club r.i.p</b></p>');
+            p('&nbsp;');
+            crews.forEach(crew => buildComedySection(L, crew, d));
+
+            L.push('</body></html>');
+            return L.join('\n');
+        }
+
+        function buildCrewSection(L, crew, startTime, endTime, d) {
+            const p = s => L.push(`<p>${s}</p>`);
+            const crewEvents = events.filter(e => e.crewId === crew.id);
+            const coords = crew.coords ? ` (${crew.coords})` : '';
+            const flights = pluralUk(crewEvents.length, ['виліт', 'вильоти', 'вильотів']);
+
+            L.push(`<p>${INDENT}<b>ТЗП Vampire «${crew.name.toUpperCase()}»${coords} особовий склад здійснив ${crewEvents.length} ${flights}.</b></p>`);
+            crewMemberLines(crew).forEach(line => L.push(`<p>${INDENT}${line}</p>`));
+            p(`Протягом звітного періоду з ${startTime} ${d.yesterday}р. по ${endTime} ${d.date}р. було здійснено наступне:`);
+
+            if (!crewEvents.length) {
+                p('<b>Вильотів не було.</b>');
+                p('&nbsp;'); p('&nbsp;');
+                return;
             }
-            
-            html += `<p>6. Витрати БК:</p>\n`;
-            Object.entries(bkSummary).forEach(([type, count]) => {
-                html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;${type} – ${count} шт.</p>\n`;
+
+            // групуємо за типом
+            const byType = {};
+            crewEvents.forEach(ev => (byType[ev.type || 'Інше'] ??= []).push(ev));
+
+            Object.entries(byType).forEach(([type, list]) => {
+                p(`<b><u>${type}:</u></b>`);
+                list.forEach(ev => {
+                    if (type === 'Мінування' && ev.locations?.length) {
+                        ev.locations.forEach(loc => {
+                            let line = `${loc.час || ev.sky || '00:00'} – мінування`;
+                            if (loc.landmark) line += ` ${loc.landmark}`;
+                            if (loc.coords) line += ` за координатами (${loc.coords})`;
+                            p(line);
+                        });
+                    } else {
+                        let line = '';
+                        const firstTime = [ev.sky, ev.drop, ev.ground].find(t => t);
+                        if (firstTime) line = firstTime + ' – ';
+                        line += type.toLowerCase();
+                        if (ev.targets?.length) {
+                            const names = [...new Set(ev.targets.map(t => TARGET_GENITIVE[t.type.toLowerCase()] || t.type.toLowerCase()))];
+                            line += ` ${names.join(', ')}`;
+                        }
+                        if (ev.landmark) line += ` ${ev.landmark}`;
+                        if (ev.coords) line += ` за координатами (${ev.coords})`;
+                        p(line);
+                    }
+                });
+
+                const bkForType = aggregateAmmo(list);
+                if (Object.keys(bkForType).length) {
+                    p('<b><u>Використано БК:</u></b>');
+                    Object.entries(bkForType).forEach(([t, c]) => p(`${t} – ${c} шт.`));
+                }
+                p('&nbsp;');
             });
-            
-            html += `<p>7. Втрати:</p>\n`;
-            if (boardLostCount > 0) {
-                html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;ОіВТ – ${boardLostCount} БпЛА</p>\n`;
+
+            const crewBk = aggregateAmmo(crewEvents);
+            if (Object.keys(crewBk).length) {
+                p('<b><u>Загальна кількість БК:</u></b>');
+                Object.entries(crewBk).forEach(([t, c]) => p(`${t} – ${c} шт.`));
             }
-            
-            html += `<p>8. Проблемні питання:</p>\n`;
-            html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;- Висока активність ворожих FPV на маршрутах</p>\n`;
-            html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;- Активність крил</p>\n`;
-            html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;- Труднощі з логістикою</p>\n`;
-            
-            html += `<p>9. Заплановані дії:</p>\n`;
-            html += `<p>&nbsp;</p>\n`;
-            html += `<p>&nbsp;</p>\n`;
-            
-            const declineTimes = (count) => {
-                const lastDigit = count % 10;
-                const lastTwoDigits = count % 100;
-                
-                if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-                    return 'разів';
-                }
-                
-                if (lastDigit === 1) {
-                    return 'раз';
-                }
-                
-                if (lastDigit >= 2 && lastDigit <= 4) {
-                    return 'рази';
-                }
-                
-                return 'разів';
-            };
-            
-            const totalEvents = events.length;
-            html += `<p style="font-size: 12pt; text-align: center;"><b>Застосовано Vampire по противнику – ${totalEvents} ${declineTimes(totalEvents)}.</b></p>\n`;
-            
-            const capitalizeAll = (name) => {
-                if (!name) return '';
-                return name.trim().split(/\\s+/).map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                ).join(' ');
-            };
-            
-            crews.forEach(crew => {
-                const crewEvents = events.filter(e => e.crewId === crew.id);
-                
-                const coordsText = crew.coords ? ` (${crew.coords})` : '';
-                const flightsText = crewEvents.length === 0 ? 'вильотів' : 
-                                   crewEvents.length === 1 ? 'виліт' : 
-                                   crewEvents.length < 5 ? 'вильоти' : 'вильотів';
-                
-                html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;<b>ТЗП Vampire «${crew.name}»${coordsText} особовий склад здійснив ${crewEvents.length} ${flightsText}.</b></p>\n`;
-                
-                const formatCrewName = (name) => {
-                    if (!name) return '';
-                    
-                    const rankPattern = /^(головний майстер-сержант|старший майстер-сержант|майстер-сержант|штаб-сержант|головний сержант|старший сержант|молодший сержант|сержант|старший солдат|солдат|рядовий|рекрут|старший лейтенант|молодший лейтенант|лейтенант|капітан)\s+(.+)$/i;
-                    
-                    const match = name.trim().match(rankPattern);
-                    
-                    if (match) {
-                        const rank = match[1].toLowerCase();
-                        const rest = match[2].trim().split(/\s+/);
-                        
-                        if (rest.length === 0) return rank;
-                        
-                        const surname = rest[0].toUpperCase();
-                        const otherNames = rest.slice(1).map(word => 
-                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                        );
-                        
-                        return [rank, surname, ...otherNames].join(' ');
+            p('&nbsp;'); p('&nbsp;');
+        }
+
+        function buildComedySection(L, crew, d) {
+            const p = s => L.push(`<p>${s}</p>`);
+            const crewEvents = events.filter(e => e.crewId === crew.id);
+
+            p(d.date);
+            p(`ТЗП ${crew.name.toUpperCase()}`);
+            p(`Денні вильоти - ${crewEvents.length}`);
+            crewMemberLines(crew, { comedy: true }).forEach(p);
+            p('&nbsp;');
+
+            crewEvents.forEach((ev, index) => {
+                let title = ev.type || 'Інше';
+                if (ev.landmark) title += ` ${ev.landmark}`;
+                p(`${index + 1}) ${title}`);
+                if (ev.coords) p(ev.coords);
+                if (ev.sky) p(`Взліт: ${ev.sky}`);
+                if (ev.drop) p(`Скид: ${ev.drop}`);
+                if (ev.ground) p(`Земля: ${ev.ground}`);
+                if (ev.ammo?.length) p(`БК: ${ev.ammo.map(i => `${i.type} - ${i.count} шт`).join(', ')}`);
+
+                if (ev.targets?.length) {
+                    const sum = (st) => ev.targets.filter(t => t.type === 'Піхота' && t.status === st).reduce((s, t) => s + t.count, 0);
+                    const i200 = sum('200'), i300 = sum('300');
+                    if (i200 || i300) {
+                        const parts = [];
+                        if (i200) parts.push(`200 - ${i200}`);
+                        if (i300) parts.push(`300 - ${i300}`);
+                        p(`Піхота ${parts.join(', ')}`);
                     }
-                    
-                    const words = name.trim().split(/\s+/);
-                    if (words.length === 0) return '';
-                    
-                    const surname = words[0].toUpperCase();
-                    const otherNames = words.slice(1).map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                    );
-                    
-                    return [surname, ...otherNames].join(' ');
-                };
-                
-                if (crew.operator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;оператор – ${formatCrewName(crew.operator)}</p>\n`;
-                if (crew.secondPilot) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;другий пілот – ${formatCrewName(crew.secondPilot)}</p>\n`;
-                if (crew.navigator) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;штурман – ${formatCrewName(crew.navigator)}</p>\n`;
-                if (crew.engineer) html += `<p>&nbsp;&nbsp;&nbsp;&nbsp;інженер БК – ${formatCrewName(crew.engineer)}</p>\n`;
-                
-                html += `<p>Протягом звітного періоду з ${startTime} ${yesterdayStr}р. по ${endTime} ${dateStr}р. було здійснено наступне:</p>\n`;
-                
-                if (crewEvents.length === 0) {
-                    html += `<p><b>Вильотів не було.</b></p>\n`;
-                    html += `<p>&nbsp;</p>\n`;
-                    html += `<p>&nbsp;</p>\n`;
-                    return;
                 }
-                
-                const eventsByType = {};
-                crewEvents.forEach(event => {
-                    const type = event.type || 'Інше';
-                    if (!eventsByType[type]) eventsByType[type] = [];
-                    eventsByType[type].push(event);
-                });
-                
-                const targetGenitive = {
-                    'піхота': 'піхоти', 'укриття': 'укриття', 'танки': 'танка',
-                    'ббм': 'ббм', 'рвіа': 'рвіа', 'ппо': 'ппо', 'ат': 'ат',
-                    'спеціальна': 'спеціальної', 'бпла': 'бпла',
-                    'човни (катери)': 'човна', 'вертольоти': 'вертольота',
-                    'птз': 'птз', 'стрілецька зброя': 'стрілецької зброї',
-                    'тзп': 'тзп', 'ждун': 'ждуна'
-                };
-                
-                Object.entries(eventsByType).forEach(([type, eventsOfType]) => {
-                    html += `<p><b><u>${type}:</u></b></p>\n`;
-                    
-                    eventsOfType.forEach(event => {
-                        if (type === 'Мінування' && event.locations && event.locations.length > 0) {
-                            const baseTime = event.sky || event.drop || event.ground || '00:00';
-                            const [hours, minutes] = baseTime.split(':').map(Number);
-                            
-                            event.locations.forEach((loc, index) => {
-                                let timeStr = baseTime;
-                                if (index >= 2) {
-                                    const newMinutes = minutes + 1;
-                                    const newHours = hours + Math.floor(newMinutes / 60);
-                                    const finalMinutes = newMinutes % 60;
-                                    timeStr = `${String(newHours).padStart(2, '0')}:${String(finalMinutes).padStart(2, '0')}`;
-                                }
-                                
-                                let eventLine = `${timeStr} – мінування`;
-                                if (loc.landmark) eventLine += ` ${loc.landmark}`;
-                                if (loc.coords) eventLine += ` за координатами (${loc.coords})`;
-                                html += `<p>${eventLine}</p>\n`;
-                            });
-                        } else {
-                            let eventLine = '';
-                            if (event.sky || event.drop || event.ground) {
-                                const times = [event.sky, event.drop, event.ground].filter(t => t);
-                                eventLine = times[0] + ' – ';
-                            }
-                            
-                            eventLine += type.toLowerCase();
-                            
-                            if (event.targets && event.targets.length > 0) {
-                                const targetTypes = [...new Set(event.targets.map(t => {
-                                    const lower = t.type.toLowerCase();
-                                    return targetGenitive[lower] || lower;
-                                }))];
-                                eventLine += ` ${targetTypes.join(', ')}`;
-                            }
-                            
-                            if (event.landmark) eventLine += ` ${event.landmark}`;
-                            if (event.coords) eventLine += ` за координатами (${event.coords})`;
-                            
-                            html += `<p>${eventLine}</p>\n`;
-                        }
-                    });
-                    
-                    const bkForType = {};
-                    eventsOfType.forEach(event => {
-                        if (event.ammo && event.ammo.length > 0) {
-                            event.ammo.forEach(item => {
-                                bkForType[item.type] = (bkForType[item.type] || 0) + item.count;
-                            });
-                        }
-                    });
-                    
-                    if (Object.keys(bkForType).length > 0) {
-                        html += `<p><b><u>Використано БК:</u></b></p>\n`;
-                        Object.entries(bkForType).forEach(([type, count]) => {
-                            html += `<p>${type} – ${count} шт.</p>\n`;
-                        });
-                    }
-                    
-                    html += `<p>&nbsp;</p>\n`;
-                });
-                
-                const crewBkSummary = {};
-                crewEvents.forEach(event => {
-                    if (event.ammo) {
-                        event.ammo.forEach(item => {
-                            crewBkSummary[item.type] = (crewBkSummary[item.type] || 0) + item.count;
-                        });
-                    }
-                });
-                
-                if (Object.keys(crewBkSummary).length > 0) {
-                    html += `<p><b><u>Загальна кількість БК:</u></b></p>\n`;
-                    Object.entries(crewBkSummary).forEach(([type, count]) => {
-                        html += `<p>${type} – ${count} шт.</p>\n`;
-                    });
-                }
-                
-                html += `<p>&nbsp;</p>\n`;
-                html += `<p>&nbsp;</p>\n`;
+                if (ev.checkboxes?.boardLost && ev.checkboxes.lossReason) p(`Борт втрачено: ${ev.checkboxes.lossReason}`);
+                if (ev.comment) p(`Коментар: ${ev.comment}`);
+                p('&nbsp;');
             });
-            
-            html += `<p>========================</p>\n`;
-            html += `<p style="font-size: 14pt;"><b>Для comedy club r.i.p</b></p>\n`;
-            html += `<p>&nbsp;</p>\n`;
-            
-            crews.forEach(crew => {
-                const crewEvents = events.filter(e => e.crewId === crew.id);
-                
-                html += `<p>${dateStr}</p>\n`;
-                html += `<p>ТЗП ${crew.name}</p>\n`;
-                html += `<p>Денні вильоти - ${crewEvents.length}</p>\n`;
-                
-                const formatCrewNameComedy = (name) => {
-                    if (!name) return '';
-                    
-                    const rankPattern = /^(головний майстер-сержант|старший майстер-сержант|майстер-сержант|штаб-сержант|головний сержант|старший сержант|молодший сержант|сержант|старший солдат|солдат|рядовий|рекрут|старший лейтенант|молодший лейтенант|лейтенант|капітан)\s+(.+)$/i;
-                    
-                    const match = name.trim().match(rankPattern);
-                    
-                    if (match) {
-                        const rank = match[1].split(' ').map(word => 
-                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                        ).join(' ');
-                        const rest = match[2].trim().split(/\s+/);
-                        
-                        if (rest.length === 0) return rank;
-                        
-                        const surname = rest[0].toUpperCase();
-                        const otherNames = rest.slice(1).map(word => 
-                            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                        );
-                        
-                        return [rank, surname, ...otherNames].join(' ');
-                    }
-                    
-                    const words = name.trim().split(/\s+/);
-                    if (words.length === 0) return '';
-                    
-                    const surname = words[0].toUpperCase();
-                    const otherNames = words.slice(1).map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-                    );
-                    
-                    return [surname, ...otherNames].join(' ');
-                };
-                
-                if (crew.operator) html += `<p>Оператор - ${formatCrewNameComedy(crew.operator)}</p>\n`;
-                if (crew.secondPilot) html += `<p>Другий пілот - ${formatCrewNameComedy(crew.secondPilot)}</p>\n`;
-                if (crew.navigator) html += `<p>Штурман - ${formatCrewNameComedy(crew.navigator)}</p>\n`;
-                if (crew.engineer) html += `<p>Інженер БК - ${formatCrewNameComedy(crew.engineer)}</p>\n`;
-                html += `<p>&nbsp;</p>\n`;
-                
-                crewEvents.forEach((event, index) => {
-                    const eventNum = index + 1;
-                    let eventTitle = event.type || 'Інше';
-                    if (event.landmark) eventTitle += ` ${event.landmark}`;
-                    
-                    html += `<p>${eventNum}) ${eventTitle}</p>\n`;
-                    if (event.coords) html += `<p>${event.coords}</p>\n`;
-                    if (event.sky) html += `<p>Взліт: ${event.sky}</p>\n`;
-                    if (event.drop) html += `<p>Скид: ${event.drop}</p>\n`;
-                    if (event.ground) html += `<p>Земля: ${event.ground}</p>\n`;
-                    
-                    if (event.ammo && event.ammo.length > 0) {
-                        const bkStr = event.ammo.map(item => `${item.type} - ${item.count} шт`).join(', ');
-                        html += `<p>БК: ${bkStr}</p>\n`;
-                    }
-                    
-                    if (event.targets && event.targets.length > 0) {
-                        const infantry200 = event.targets.filter(t => t.type === 'Піхота' && t.status === '200').reduce((sum, t) => sum + t.count, 0);
-                        const infantry300 = event.targets.filter(t => t.type === 'Піхота' && t.status === '300').reduce((sum, t) => sum + t.count, 0);
-                        
-                        if (infantry200 > 0 || infantry300 > 0) {
-                            let infantryStr = 'Піхота ';
-                            const parts = [];
-                            if (infantry200 > 0) parts.push(`200 - ${infantry200}`);
-                            if (infantry300 > 0) parts.push(`300 - ${infantry300}`);
-                            infantryStr += parts.join(', ');
-                            html += `<p>${infantryStr}</p>\n`;
-                        }
-                    }
-                    
-                    if (event.checkboxes?.boardLost && event.checkboxes.lossReason) {
-                        html += `<p>Борт втрачено: ${event.checkboxes.lossReason}</p>\n`;
-                    }
-                    
-                    if (event.comment) {
-                        html += `<p>Коментар: ${event.comment}</p>\n`;
-                    }
-                    
-                    html += `<p>&nbsp;</p>\n`;
-                });
-                
-                html += `<p>&nbsp;</p>\n`;
-            });
-            
-            html += `</body></html>`;
-            
-            const fileDate = now.toLocaleDateString('uk-UA', { day: '2-digit', month: '2-digit', year: '2-digit' }).replace(/\//g, '.');
-            const timeStart = startTime.replace(':', '-');
-            const timeEnd = endTime.replace(':', '-');
-            
+            p('&nbsp;');
+        }
+
+        // Рядки складу екіпажу (порядок і підписи однакові; comedy → звання з великої)
+        function crewMemberLines(crew, { comedy = false } = {}) {
+            const fmt = name => formatCrewName(name, { titleCaseRank: comedy });
+            const labels = comedy
+                ? { operator: 'Оператор', secondPilot: 'Другий пілот', navigator: 'Штурман', engineer: 'Інженер БК' }
+                : { operator: 'оператор', secondPilot: 'другий пілот', navigator: 'штурман', engineer: 'інженер БК' };
+            const sep = comedy ? ' - ' : ' – ';
+            const lines = [];
+            for (const key of ['operator', 'secondPilot', 'navigator', 'engineer']) {
+                if (crew[key]) lines.push(`${labels[key]}${sep}${fmt(crew[key])}`);
+            }
+            return lines;
+        }
+
+        function downloadReport(html) {
+            const d = todayStrings();
+            const ts = $('startTime').value.replace(':', '-');
+            const te = $('endTime').value.replace(':', '-');
             let filename;
             if (crews.length === 1) {
-                const crewName = crews[0].name.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
-                filename = `1 РУБпАК_${crewName}_${timeStart}_${timeEnd}_${fileDate}.doc`;
+                const name = crews[0].name.replace(/[^a-zA-Zа-яА-ЯіІїЇєЄ0-9]/g, '_');
+                filename = `1 РУБпАК_${name}_${ts}_${te}_${d.file}.doc`;
             } else {
-                filename = `1 РУБпАК_${timeStart}_${timeEnd}_${fileDate}.doc`;
+                filename = `1 РУБпАК_${ts}_${te}_${d.file}.doc`;
             }
-            
+
             const blob = new Blob([html], { type: 'application/msword;charset=utf-8' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -2059,111 +1025,31 @@
             link.click();
             clearAll();
         }
-        function formatCoordinatesInput(eventOrField) {
-            const field = eventOrField.target ? eventOrField.target : eventOrField;
-            
-            const cyrillicToLatin = {
-                'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E', 'Н': 'H',
-                'К': 'K', 'М': 'M', 'О': 'O', 'Р': 'P', 'Т': 'T',
-                'Х': 'X', 'У': 'Y',
-                'а': 'A', 'в': 'B', 'с': 'C', 'е': 'E', 'н': 'H',
-                'к': 'K', 'м': 'M', 'о': 'O', 'р': 'P', 'т': 'T',
-                'х': 'X', 'у': 'Y'
-            };
-            
-            let value = field.value
-                .split('')
-                .map(ch => cyrillicToLatin[ch] || ch)
-                .join('')
-                .replace(/\s/g, '');
-            
-            if (value.length === 0) {
-                field.value = '';
-                return;
-            }
-            
-            let formatted = '';
-            
-            for (let i = 0; i < value.length && i < 15; i++) {
-                const char = value[i].toUpperCase();
-                
-                if (i < 2) {
-                    if (/\d/.test(char)) {
-                        formatted += char;
-                    }
-                } else if (i === 2) {
-                    if (/[A-Z]/.test(char)) {
-                        formatted += char;
-                    }
-                } else if (i >= 3 && i < 5) {
-                    if (/[A-Z]/.test(char)) {
-                        formatted += char;
-                    }
-                } else {
-                    if (/\d/.test(char)) {
-                        formatted += char;
-                    }
-                }
-            }
-            
-            let result = '';
-            if (formatted.length > 0) {
-                result = formatted.slice(0, 3); // 37T
-            }
-            if (formatted.length >= 4) {
-                result += ' ' + formatted.slice(3, 5); // BN
-            }
-            if (formatted.length >= 6) {
-                result += ' ' + formatted.slice(5, 10); // 98978
-            }
-            if (formatted.length >= 11) {
-                result += ' ' + formatted.slice(10, 15); // 89504
-            }
-            
-            field.value = result;
+
+        /* ============================================================
+           ІНІЦІАЛІЗАЦІЯ
+           ============================================================ */
+        function buildMiningLocations() {
+            $('miningLocations').innerHTML = [1, 2, 3, 4].map(i => `
+                <div class="mining-location-group">
+                    <div class="form-group">
+                        <label>Квадрат ${i}</label>
+                        <input type="text" id="miningSquare${i}" placeholder="Назва квадрату">
+                    </div>
+                    <div class="form-group">
+                        <label>Координати ${i}</label>
+                        <input type="text" id="miningCoords${i}" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinates(this)">
+                    </div>
+                </div>`).join('');
         }
-        
-        function declineFlights(count) {
-            const lastDigit = count % 10;
-            const lastTwoDigits = count % 100;
-            
-            if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-                return 'польотів';
-            }
-            
-            if (lastDigit === 1) {
-                return 'політ';
-            }
-            
-            if (lastDigit >= 2 && lastDigit <= 4) {
-                return 'польоти';
-            }
-            
-            return 'польотів';
-        }
-        
-        window.onload = function() {
-            const timeFields = ['field4', 'field5', 'field6'];
-            timeFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', function(e) {
-                        setTimeout(() => formatTimeInput(e), 0);
-                    });
-                }
-            });
-            
-            const coordFields = ['newCrewCoords', 'field3'];
-            coordFields.forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('input', function(e) {
-                        setTimeout(() => formatCoordinatesInput(field), 0);
-                    });
-                }
-            });
-            
+
+        window.onload = function () {
+            $('field1').innerHTML = optionsHTML(EVENT_TYPES, 'Оберіть тип події');
+            buildMiningLocations();
+            resetBkRows();
+            resetTargetRows();
             updateCrewsList();
+            onEventTypeChange();
         };
     </script>
 </body>
