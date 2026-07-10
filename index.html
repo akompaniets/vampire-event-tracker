@@ -152,6 +152,10 @@
                     <input type="text" id="newCrewName" placeholder="Назва позиції (наприклад, Страус)">
                 </div>
                 <div class="form-group">
+                    <label>Засіб</label>
+                    <select id="newCrewMeans"></select>
+                </div>
+                <div class="form-group">
                     <label>Координати позиції</label>
                     <input type="text" id="newCrewCoords" placeholder="ХХХ ХХ ХХХХХ ХХХХХ" maxlength="18" oninput="formatCoordinates(this)">
                 </div>
@@ -273,21 +277,27 @@
 
     <div class="footer">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.13</div>
+        <div>Ver: 0.2.14</div>
     </div>
 
     <script>
         'use strict';
 
+        /* ============================================================
+           ДАНІ (єдине джерело правди)
+           ============================================================ */
         const EVENT_TYPES = ['Ураження', 'Переміщення борта', 'Доставка посилок', 'Прокидання',
             'Тестовий виліт', 'Аварійний скид', 'Мінування', 'Розмінування', 'Скидання', 'Інше'];
 
+        // Засоби (перший = за замовчуванням)
+        const MEANS = ['Vampire', 'Heavy Shot', 'Perun'];
+
         const BK_TYPES = ['МОА 120', 'МОА 400', 'МОА 900', 'УАБ 2,0', 'УАБ 2,5', 'УАБ 4,0', 'ОАБ 1,5', 'ОГ-Б1',
-                          'ОБ-Д1', 'ОЗМ-72', 'ПТМ-у-01', 'ПТМ-у-03', 'ПТМ-Л1', 'ПТМ-УС-05', 'ПФМ', 'ЗАБ-2,5С (ОЗП)',
-                          'РБ 25', 'РКГ-3', 'ЗАЛ-5', 'ЗАЛ-7', 'ЗАЛ 14', 'ОФ 2500',
-                          'ЛОМ 5', 'ЛОМ 10', 'МАБ Л 70К', 'РБ-40', 'УДШ-У', 'УДШ-ХП', 'КОМ-1500', 'БКО АН 1500',
-                          'HFB1200F', 'HFB1300F', 'ТАБ-1,5', 'ТАБ-1,5-1', 'БЦ 3500', 'РН90', 'BAvB-3,5 (МТД)',
-                          'СВП', 'ЗБ-1200', 'ЗБ-2500', 'БПБПЛА-ОК-2500'];
+            'ОБ-Д1', 'ОЗМ-72', 'ПТМ-у-01', 'ПТМ-у-03', 'ПТМ-Л1', 'ПТМ-УС-05', 'ПФМ', 'ЗАБ-2,5С (ОЗП)',
+            'РБ 25', 'РКГ-3', 'ЗАЛ-5', 'ЗАЛ-7', 'ЗАЛ 14', 'ОФ 2500',
+            'ЛОМ 5', 'ЛОМ 10', 'МАБ Л 70К', 'РБ-40', 'УДШ-У', 'УДШ-ХП', 'КОМ-1500', 'БКО АН 1500',
+            'HFB1200F', 'HFB1300F', 'ТАБ-1,5', 'ТАБ-1,5-1', 'БЦ 3500', 'РН90', 'BAvB-3,5 (МТД)',
+            'СВП', 'ЗБ-1200', 'ЗБ-2500', 'БПБПЛА-ОК-2500'];
 
         const TARGET_TYPES = ['Піхота', 'Укриття', 'Танки', 'ББМ', 'РВіА', 'ППО', 'АТ', 'Спеціальна',
             'БпЛА', 'Човни (катери)', 'Вертольоти', 'ПТЗ', 'Стрілецька зброя', 'ТЗП', 'Ждун', 'Інше'];
@@ -312,12 +322,18 @@
 
         const INDENT = '&nbsp;&nbsp;&nbsp;&nbsp;';
 
+        /* ============================================================
+           СТАН
+           ============================================================ */
         let events = [];
         let crews = [];
         let crewCounter = 1;
         let bkRowCounter = 0;
         let targetRowCounter = 0;
 
+        /* ============================================================
+           УТИЛІТИ
+           ============================================================ */
         const $ = id => document.getElementById(id);
 
         // <option> розмітка зі списку рядків
@@ -332,6 +348,7 @@
                 .join(' ');
         }
 
+        // Українське відмінювання за числом: forms = [одн., 2-4, 5+/багато]
         function pluralUk(count, [one, few, many]) {
             const d = count % 10, dd = count % 100;
             if (dd >= 11 && dd <= 14) return many;
@@ -340,6 +357,8 @@
             return many;
         }
 
+        // ПІБ у форматі: [звання] ПРІЗВИЩЕ Ім'я По-батькові.
+        // titleCaseRank = true → звання теж з великої (для comedy-блоку).
         function formatCrewName(name, { titleCaseRank = false } = {}) {
             if (!name) return '';
             const trimmed = name.trim();
@@ -385,6 +404,9 @@
             };
         }
 
+        /* ============================================================
+           ФОРМАТУВАННЯ ПОЛІВ ВВОДУ
+           ============================================================ */
         function formatTime(field) {
             let value = field.value.replace(/[^\d]/g, '').slice(0, 4);
             if (!value) { field.value = ''; return; }
@@ -423,6 +445,9 @@
             field.value = r;
         }
 
+        /* ============================================================
+           РЯДКИ БК
+           ============================================================ */
         function bkRowHTML(id, isFirst) {
             return `<div class="bk-row" data-row="${id}">
                 <select class="bk-type" onchange="autofillBkCount(this)">${optionsHTML(BK_TYPES, '-- Оберіть тип БК --')}</select>
@@ -454,7 +479,9 @@
             if (!input.value || input.value === '0') input.value = '1';
         }
 
-      
+        /* ============================================================
+           РЯДКИ ЦІЛЕЙ
+           ============================================================ */
         function targetRowHTML(id, isFirst) {
             return `<div class="target-row" data-target-row="${id}">
                 <select class="target-type" onchange="updateTargetStatus(${id})">${optionsHTML(TARGET_TYPES, '-- Оберіть ціль --')}</select>
@@ -509,6 +536,9 @@
             }
         }
 
+        /* ============================================================
+           ПЕРЕМИКАННЯ СЕКЦІЙ ЗАЛЕЖНО ВІД ТИПУ ПОДІЇ
+           ============================================================ */
         function onEventTypeChange() {
             const type = $('field1').value;
 
@@ -539,12 +569,16 @@
             if (!checked) $('lossReason').value = '';
         }
 
+        /* ============================================================
+           ЕКІПАЖІ
+           ============================================================ */
         function showAddCrewForm() { $('addCrewForm').style.display = 'block'; }
 
         function cancelAddCrew() {
             $('addCrewForm').style.display = 'none';
             ['newCrewName', 'newCrewCoords', 'newCrewOperator', 'newCrewSecondPilot',
                 'newCrewNavigator', 'newCrewEngineer'].forEach(id => { $(id).value = ''; });
+            $('newCrewMeans').value = MEANS[0];
         }
 
         function addCrew() {
@@ -554,6 +588,7 @@
             crews.push({
                 id: crewCounter++,
                 name,
+                means: $('newCrewMeans').value,
                 coords: $('newCrewCoords').value.trim(),
                 operator: $('newCrewOperator').value.trim(),
                 secondPilot: $('newCrewSecondPilot').value.trim(),
@@ -587,7 +622,7 @@
                 return `<div class="crew-card">
                     <button class="del" onclick="deleteCrew(${crew.id})">✕</button>
                     <div>
-                        <strong style="font-size: 16px;">ТЗП Vampire «${crew.name}»</strong>${coords}
+                        <strong style="font-size: 16px;">ТЗП ${crew.means || 'Vampire'} «${crew.name}»</strong>${coords}
                         <div style="margin-top: 5px; font-size: 14px; color: #666;">Подій: ${n}</div>
                     </div>
                 </div>`;
@@ -599,6 +634,9 @@
                 crews.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
+        /* ============================================================
+           ДОДАВАННЯ ПОДІЇ
+           ============================================================ */
         function collectTargets() {
             const result = [];
             document.querySelectorAll('.target-row').forEach(row => {
@@ -699,7 +737,9 @@
             alert('✅ Подію видалено!');
         }
 
-
+        /* ============================================================
+           ОЧИЩЕННЯ
+           ============================================================ */
         function clearForm() {
             ['field1', 'field2', 'field3', 'field4', 'field5', 'field6'].forEach(id => { $(id).value = ''; });
             for (let i = 1; i <= 4; i++) { $(`miningSquare${i}`).value = ''; $(`miningCoords${i}`).value = ''; }
@@ -726,6 +766,9 @@
             updateEventsList();
         }
 
+        /* ============================================================
+           СПИСОК ПОДІЙ (на екрані)
+           ============================================================ */
         function formatBK(ammo) {
             return ammo.length ? ammo.map(i => `${i.type} - ${i.count} шт`).join(', ') : '—';
         }
@@ -795,6 +838,9 @@
             return totals;
         }
 
+        /* ============================================================
+           ГЕНЕРАЦІЯ ЗВІТУ
+           ============================================================ */
         function saveToFile() {
             if (!events.length) { alert('⚠️ Немає подій для збереження!'); return; }
             if (!crews.length) { alert('⚠️ Немає екіпажів!'); return; }
@@ -834,6 +880,7 @@
 
             const bkSummary = aggregateAmmo(events);
 
+            // --- складання HTML ---
             const L = [];
             const p = (s = '') => L.push(`<p>${s}</p>`);
             const ind = s => L.push(`<p>${INDENT}${s}</p>`);
@@ -879,7 +926,7 @@
             p('&nbsp;');
             p('&nbsp;');
 
-            L.push(`<p style="font-size: 12pt; text-align: center;"><b>Застосовано Vampire по противнику – ${events.length} ${pluralUk(events.length, ['раз', 'рази', 'разів'])}.</b></p>`);
+            L.push(`<p style="font-size: 12pt; text-align: center;"><b>Застосовано БпЛА типу "Бомбер" по противнику – ${events.length} ${pluralUk(events.length, ['раз', 'рази', 'разів'])}.</b></p>`);
 
             // --- детальний блок по екіпажах ---
             crews.forEach(crew => buildCrewSection(L, crew, startTime, endTime, d));
@@ -900,7 +947,7 @@
             const coords = crew.coords ? ` (${crew.coords})` : '';
             const flights = pluralUk(crewEvents.length, ['виліт', 'вильоти', 'вильотів']);
 
-            L.push(`<p>${INDENT}<b>ТЗП Vampire «${crew.name.toUpperCase()}»${coords} особовий склад здійснив ${crewEvents.length} ${flights}.</b></p>`);
+            L.push(`<p>${INDENT}<b>ТЗП ${crew.means || 'Vampire'} «${crew.name.toUpperCase()}»${coords} особовий склад здійснив ${crewEvents.length} ${flights}.</b></p>`);
             crewMemberLines(crew).forEach(line => L.push(`<p>${INDENT}${line}</p>`));
             p(`Протягом звітного періоду з ${startTime} ${d.yesterday}р. по ${endTime} ${d.date}р. було здійснено наступне:`);
 
@@ -1045,6 +1092,7 @@
 
         window.onload = function () {
             $('field1').innerHTML = optionsHTML(EVENT_TYPES, 'Оберіть тип події');
+            $('newCrewMeans').innerHTML = MEANS.map(m => `<option value="${m}">${m}</option>`).join('');
             buildMiningLocations();
             resetBkRows();
             resetTargetRows();
