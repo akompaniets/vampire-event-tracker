@@ -277,7 +277,7 @@
 
     <div class="footer">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.17</div>
+        <div>Ver: 0.2.18</div>
     </div>
 
     <script>
@@ -292,8 +292,8 @@
         // Засоби (перший = за замовчуванням)
         const MEANS = ['Vampire', 'Heavy Shot', 'Perun'];
 
-        const BK_TYPES = ['МОА 120', 'МОА-400', 'МОА-900', 'УАБ 2,0', 'УАБ 2,5', 'УАБ 4,0', 'ОАБ 1,5', 'ОГ-Б1',
-            'ОБ-Д1', 'ОЗМ-72', 'ПТМ-у-01', 'ПТМ-у-03', 'ПТМ-Л1', 'ПТМ-УС-05', 'ПТМ-УС-07', 'ПФМ', 'ЗАБ-2,5С (ОЗП)',
+        const BK_TYPES = ['МОА 120', 'МОА 400', 'МОА 900', 'УАБ 2,0', 'УАБ 2,5', 'УАБ 4,0', 'ОАБ 1,5', 'ОГ-Б1',
+            'ОБ-Д1', 'ОЗМ-72', 'ПТМ-у-01', 'ПТМ-у-03', 'ПТМ-Л1', 'ПТМ-УС-05', 'ПФМ', 'ЗАБ-2,5С (ОЗП)',
             'РБ 25', 'РКГ-3', 'ЗАЛ-5', 'ЗАЛ-7', 'ЗАЛ 14', 'ОФ 2500',
             'ЛОМ 5', 'ЛОМ 10', 'МАБ Л 70К', 'РБ-40', 'УДШ-У', 'УДШ-ХП', 'КОМ-1500', 'БКО АН 1500',
             'HFB1200F', 'HFB1300F', 'ТАБ-1,5', 'ТАБ-1,5-1', 'БЦ 3500', 'РН90', 'BAvB-3,5 (МТД)',
@@ -622,7 +622,7 @@
                 return `<div class="crew-card">
                     <button class="del" onclick="deleteCrew(${crew.id})">✕</button>
                     <div>
-                        <strong style="font-size: 16px;">ТЗП ${crew.means || 'Vampire'} «${crew.name}»</strong>${coords}
+                        <strong style="font-size: 16px;">ЗПМ ${crew.means || 'Vampire'} «${crew.name}»</strong>${coords}
                         <div style="margin-top: 5px; font-size: 14px; color: #666;">Подій: ${n}</div>
                     </div>
                 </div>`;
@@ -947,7 +947,7 @@
             const coords = crew.coords ? ` (${crew.coords})` : '';
             const flights = pluralUk(crewEvents.length, ['виліт', 'вильоти', 'вильотів']);
 
-            L.push(`<p>${INDENT}<b>ТЗП ${crew.means || 'Vampire'} «${crew.name.toUpperCase()}»${coords} особовий склад здійснив ${crewEvents.length} ${flights}.</b></p>`);
+            L.push(`<p>${INDENT}<b>ЗПМ ${crew.means || 'Vampire'} «${crew.name.toUpperCase()}»${coords} особовий склад здійснив ${crewEvents.length} ${flights}.</b></p>`);
             crewMemberLines(crew).forEach(line => L.push(`<p>${INDENT}${line}</p>`));
             p(`Протягом звітного періоду з ${startTime} ${d.yesterday}р. по ${endTime} ${d.date}р. було здійснено наступне:`);
 
@@ -1007,7 +1007,7 @@
             const crewEvents = events.filter(e => e.crewId === crew.id);
 
             p(d.date);
-            p(`ТЗП ${crew.name.toUpperCase()}`);
+            p(`ЗПМ ${crew.name.toUpperCase()}`);
             p(`Денні вильоти - ${crewEvents.length}`);
             crewMemberLines(crew, { comedy: true }).forEach(p);
             p('&nbsp;');
