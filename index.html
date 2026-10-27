@@ -277,7 +277,7 @@
 
     <div class="footer">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.20</div>
+        <div>Ver: 0.2.21</div>
     </div>
 
     <script>
@@ -945,9 +945,8 @@
             const p = s => L.push(`<p>${s}</p>`);
             const crewEvents = events.filter(e => e.crewId === crew.id);
             const coords = crew.coords ? ` (${crew.coords})` : '';
-            const flights = pluralUk(crewEvents.length, ['виліт', 'вильоти', 'вильотів']);
 
-            L.push(`<p>${INDENT}<b>ЗПМ ${crew.means || 'Vampire'} «${crew.name.toUpperCase()}»${coords} особовий склад здійснив ${crewEvents.length} ${flights}.</b></p>`);
+            L.push(`<p>${INDENT}<b>ЗПМ «${crew.name.toUpperCase()}»${coords} здійснено вильотів БпЛА типу «${crew.means || 'Vampire'}»: ${crewEvents.length}</b></p>`);
             crewMemberLines(crew).forEach(line => L.push(`<p>${INDENT}${line}</p>`));
             p(`Протягом звітного періоду з ${startTime} ${d.yesterday}р. по ${endTime} ${d.date}р. було здійснено наступне:`);
 
