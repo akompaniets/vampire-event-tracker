@@ -277,7 +277,7 @@
 
     <div class="footer">
         <div>Powered by CHEF</div>
-        <div>Ver: 0.2.19</div>
+        <div>Ver: 0.2.20</div>
     </div>
 
     <script>
@@ -293,7 +293,7 @@
         const MEANS = ['Vampire', 'Heavy Shot', 'Perun'];
 
         const BK_TYPES = ['МОА 120', 'МОА 400', 'МОА 900', 'УАБ 2,0', 'УАБ 2,5', 'УАБ 4,0', 'ОАБ 1,5', 'ОГ-Б1',
-            'ОБ-Д1', 'ОЗМ-72', 'ПТМ-у-01', 'ПТМ-у-03', 'ПТМ-Л1', 'ПТМ-УС-05', 'ПФМ', 'ЗАБ-2,5С (ОЗП)',
+            'ОБ-Д1', 'ОЗМ-72', 'ПТМ-у-01', 'ПТМ-у-03', 'ПТМ-Л1', 'ПТМ-Л1', 'ПТМ-УС-05', 'ПФМ', 'ЗАБ-2,5С (ОЗП)',
             'РБ 25', 'РКГ-3', 'ЗАЛ-5', 'ЗАЛ-7', 'ЗАЛ 14', 'ОФ 2500',
             'ЛОМ 5', 'ЛОМ 10', 'МАБ Л 70К', 'РБ-40', 'УДШ-У', 'УДШ-ХП', 'КОМ-1500', 'БКО АН 1500',
             'HFB1200F', 'HFB1300F', 'ТАБ-1,5', 'ТАБ-1,5-1', 'БЦ 3500', 'РН90', 'BAvB-3,5 (МТД)',
@@ -957,48 +957,39 @@
                 return;
             }
 
-            // групуємо за типом
-            const byType = {};
-            crewEvents.forEach(ev => (byType[ev.type || 'Інше'] ??= []).push(ev));
+            // Єдиний список вильотів у порядку додавання (без розбивки за типом).
+            // Перелік БК тут не виводимо — лише в пункті 6.
+            // Межа доби: коли час події менший за попередній (перехід через північ) — пустий рядок.
+            const startMin = ev => parseTime(ev.sky || ev.drop || ev.ground || ev.locations?.[0]?.час || '');
+            let prevMin = null;
 
-            Object.entries(byType).forEach(([type, list]) => {
-                p(`<b><u>${type}:</u></b>`);
-                list.forEach(ev => {
-                    if (type === 'Мінування' && ev.locations?.length) {
-                        ev.locations.forEach(loc => {
-                            let line = `${loc.час || ev.sky || '00:00'} – мінування`;
-                            if (loc.landmark) line += ` ${loc.landmark}`;
-                            if (loc.coords) line += ` за координатами (${loc.coords})`;
-                            p(line);
-                        });
-                    } else {
-                        let line = '';
-                        const firstTime = [ev.sky, ev.drop, ev.ground].find(t => t);
-                        if (firstTime) line = firstTime + ' – ';
-                        line += type.toLowerCase();
-                        if (ev.targets?.length) {
-                            const names = [...new Set(ev.targets.map(t => TARGET_GENITIVE[t.type.toLowerCase()] || t.type.toLowerCase()))];
-                            line += ` ${names.join(', ')}`;
-                        }
-                        if (ev.landmark) line += ` ${ev.landmark}`;
-                        if (ev.coords) line += ` за координатами (${ev.coords})`;
+            crewEvents.forEach(ev => {
+                const curMin = startMin(ev);
+                if (prevMin !== null && curMin > 0 && curMin < prevMin) p('&nbsp;');
+                if (curMin > 0) prevMin = curMin;
+
+                if (ev.type === 'Мінування' && ev.locations?.length) {
+                    ev.locations.forEach(loc => {
+                        let line = `${loc.час || ev.sky || '00:00'} – мінування`;
+                        if (loc.landmark) line += ` ${loc.landmark}`;
+                        if (loc.coords) line += ` за координатами (${loc.coords})`;
                         p(line);
+                    });
+                } else {
+                    let line = '';
+                    const firstTime = [ev.sky, ev.drop, ev.ground].find(t => t);
+                    if (firstTime) line = firstTime + ' – ';
+                    line += (ev.type || 'Інше').toLowerCase();
+                    if (ev.targets?.length) {
+                        const names = [...new Set(ev.targets.map(t => TARGET_GENITIVE[t.type.toLowerCase()] || t.type.toLowerCase()))];
+                        line += ` ${names.join(', ')}`;
                     }
-                });
-
-                const bkForType = aggregateAmmo(list);
-                if (Object.keys(bkForType).length) {
-                    p('<b><u>Використано БК:</u></b>');
-                    Object.entries(bkForType).forEach(([t, c]) => p(`${t} – ${c} шт.`));
+                    if (ev.landmark) line += ` ${ev.landmark}`;
+                    if (ev.coords) line += ` за координатами (${ev.coords})`;
+                    p(line);
                 }
-                p('&nbsp;');
             });
 
-            const crewBk = aggregateAmmo(crewEvents);
-            if (Object.keys(crewBk).length) {
-                p('<b><u>Загальна кількість БК:</u></b>');
-                Object.entries(crewBk).forEach(([t, c]) => p(`${t} – ${c} шт.`));
-            }
             p('&nbsp;'); p('&nbsp;');
         }
 
